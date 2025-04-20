@@ -1,7 +1,6 @@
 "use client"
 
 import { usePathname, useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
 
 export function TabNavigation() {
   const router = useRouter()
