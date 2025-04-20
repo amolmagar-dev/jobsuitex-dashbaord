@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsAuthenticated(true);
 
       // Redirect to dashboard
-      router.push('/dashboard');
+      router.push('/');
     } catch (err: any) {
       setError(err.message || 'An error occurred during login');
       throw err;
@@ -145,7 +145,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsAuthenticated(true);
 
       // Redirect to dashboard
-      router.push('/dashboard');
+      router.push('/');
     } catch (err: any) {
       setError(err.message || 'An error occurred during registration');
       throw err;
@@ -182,7 +182,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsAuthenticated(true);
 
       // Redirect to dashboard
-      router.push('/dashboard');
+      router.push('/');
     } catch (err: any) {
       setError(err.message || 'An error occurred during Google authentication');
       throw err;
