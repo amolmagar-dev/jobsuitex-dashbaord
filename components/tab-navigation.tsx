@@ -10,7 +10,8 @@ export function TabNavigation() {
     { name: "Overview", path: "/" },
     { name: "Analytics", path: "/analytics" },
     { name: "Reports", path: "/reports" },
-    { name: "Notifications", path: "/notifications" }
+    { name: "Notifications", path: "/notifications" },   
+    { name: "Services", path: "/services" }
   ]
   
   const isActive = (path: string) => {
