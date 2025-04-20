@@ -1,11 +1,11 @@
 "use client"
 
 import { ChartAreaInteractive } from "@/components/chart-area-interactive"
-import { DataTable } from "@/components/data-table"
 import { SectionCards } from "@/components/section-cards"
 import { DashboardWrapper } from "@/components/dashboard-wrapper"
 
 import data from "./dashboard/data.json"
+import { ApplicationsTable } from "@/components/applications-table"
 
 export default function HomePage() {
   return (
@@ -16,7 +16,7 @@ export default function HomePage() {
         <ChartAreaInteractive />
       </div>
       
-      <DataTable data={data} />
+      <ApplicationsTable data={data} />
     </DashboardWrapper>
   )
 }
