@@ -1,27 +1,40 @@
 "use client"
 
+import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 
-interface TabNavProps {
-  activeTab: string
-  onTabChange: (tab: string) => void
-}
-
-export function TabNavigation({ activeTab, onTabChange }: TabNavProps) {
-  const tabs = ["Overview", "Analytics", "Reports", "Notifications"]
+export function TabNavigation() {
+  const router = useRouter()
+  const pathname = usePathname()
+  
+  const tabs = [
+    { name: "Overview", path: "/" },
+    { name: "Analytics", path: "/analytics" },
+    { name: "Reports", path: "/reports" },
+    { name: "Notifications", path: "/notifications" }
+  ]
+  
+  const isActive = (path: string) => {
+    if (path === "/" && pathname === "/") {
+      return true
+    }
+    return path !== "/" && pathname.startsWith(path)
+  }
   
   return (
-    <div className="flex gap-2 p-1 bg-secondary/20 rounded-lg w-fit">
+    <div className="inline-flex bg-muted/20 rounded-lg p-1">
       {tabs.map((tab) => (
-        <Button
-          key={tab}
-          variant={activeTab === tab ? "default" : "ghost"}
-          size="sm"
-          onClick={() => onTabChange(tab)}
-          className={activeTab === tab ? "" : "text-muted-foreground"}
+        <button
+          key={tab.name}
+          onClick={() => router.push(tab.path)}
+          className={`px-4 py-2 text-sm rounded-md transition-colors ${
+            isActive(tab.path) 
+              ? "bg-background text-foreground font-medium shadow-sm" 
+              : "text-muted-foreground hover:text-foreground"
+          }`}
         >
-          {tab}
-        </Button>
+          {tab.name}
+        </button>
       ))}
     </div>
   )
