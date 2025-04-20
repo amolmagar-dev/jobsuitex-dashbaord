@@ -20,7 +20,7 @@ interface AuthContextType {
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (userData: RegisterData) => Promise<void>;
-  googleAuth: (credential: string) => Promise<void>;
+  googleAuth: (token: string) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
 }
@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (token) {
           // Validate token with your existing API
-          const response = await fetch(`${API_URL}/auth/validate`, {
+          const response = await fetch(`${API_URL}/auth/me`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`
@@ -155,7 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Google authentication function
-  const googleAuth = async (credential: string) => {
+  const googleAuth = async (token: string) => {
     try {
       setLoading(true);
       setError(null);
@@ -165,7 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ credential }),
+        body: JSON.stringify({ token }),
       });
 
       const data = await response.json();
