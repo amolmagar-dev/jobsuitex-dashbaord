@@ -1,0 +1,11 @@
+2025-04-16 12:26:21 [ERROR]: Error verifying portal credentials: Invalid credentials
+2025-04-16 12:26:52 [ERROR]: Error generating profile from Naukri: Protocol error: Connection closed.
+2025-04-16 12:26:52 [ERROR]: Error analyzing profile: Protocol error: Connection closed.
+2025-04-17 10:57:30 [ERROR]: Error in downloadAndGenerateInstruction: No element found for selector: a[title='Jobseeker Login']
+2025-04-17 10:57:30 [ERROR]: Error generating profile from Naukri: No element found for selector: a[title='Jobseeker Login']
+2025-04-17 10:57:30 [ERROR]: Error analyzing profile: No element found for selector: a[title='Jobseeker Login']
+2025-04-17 12:53:41 [ERROR]: Error verifying portal credentials: Invalid credentials
+2025-04-17 12:53:43 [ERROR]: Error verifying portal credentials: Invalid credentials
+2025-04-17 12:53:44 [ERROR]: Error verifying portal credentials: Invalid credentials
+2025-04-17 12:53:45 [ERROR]: Error verifying portal credentials: Invalid credentials
+2025-04-17 12:53:46 [ERROR]: Error verifying portal credentials: Invalid credentials

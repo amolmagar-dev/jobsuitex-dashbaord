@@ -1,0 +1,25 @@
+"""
+This script is designed to allow users to upload their resumes into a specified directory. 
+The uploaded resumes will be used by the bot for training purposes, enabling it to better 
+understand and process resume data for various applications.
+
+Instructions for Users:
+1. Ensure that your resume is in a supported format (e.g., PDF, DOCX, or TXT).
+2. Place your resume in the designated directory as specified in the script or application.
+3. The bot will automatically process the uploaded resumes for training purposes.
+
+Key Details:
+- The bot uses the uploaded resumes to train its algorithms for tasks such as parsing, 
+  categorizing, and extracting relevant information.
+- Ensure that your resume includes details such as:
+  - Contact Information
+  - Work Experience (including CTC details and job roles)
+  - Educational Background
+  - Skills and Certifications
+  - Any additional relevant information
+
+Note:
+- The bot respects user privacy and ensures that the uploaded data is used solely for 
+  training purposes.
+- Avoid uploading sensitive or confidential information unless explicitly required.
+"""
