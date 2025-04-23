@@ -1,11 +1,11 @@
 // Render the appropriate step content
 import React, { useState, useEffect } from 'react';
 import { 
-Briefcase, Settings, Calendar, Bell, 
-CheckCircle, AlertCircle, PlayCircle, Save, 
-Eye, EyeOff, User, Lock, RotateCw, Brain, 
-Download, ChevronRight, ChevronLeft, Check,
-X
+  Briefcase, Settings, Calendar, Bell, Clock, Info,
+  CheckCircle, AlertCircle, PlayCircle, Save, 
+  Eye, EyeOff, User, Lock, RotateCw, Brain, 
+  Download, ChevronRight, ChevronLeft, Check,
+  X
 } from 'lucide-react';
 
 import { toast } from 'sonner';
@@ -558,64 +558,78 @@ const renderAITrainingStep = () => {
   );
 };
 
-// Render the schedule step
+// Render the schedule step with a clean, cohesive design
 const renderScheduleStep = () => {
   return (
-    <div className="space-y-6">
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label>Application Frequency</Label>
-          <RadioGroup value={applyFrequency} onValueChange={setApplyFrequency} className="grid gap-2">
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="hourly" id="hourly" />
-              <Label htmlFor="hourly" className="cursor-pointer">Hourly</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="daily" id="daily" />
-              <Label htmlFor="daily" className="cursor-pointer">Daily</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="weekly" id="weekly" />
-              <Label htmlFor="weekly" className="cursor-pointer">Weekly</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="custom" id="custom" />
-              <Label htmlFor="custom" className="cursor-pointer">Custom</Label>
-            </div>
-          </RadioGroup>
+    <div className="space-y-5 px-1">
+      {/* Frequency Selection - styled as pills */}
+      <div className="mb-6">
+        <h3 className="text-base font-medium mb-3">How often would you like to apply?</h3>
+        <div className="inline-flex bg-muted/30 p-1 rounded-lg">
+          {[
+            { value: 'hourly', label: 'Hourly' },
+            { value: 'daily', label: 'Daily' },
+            { value: 'weekly', label: 'Weekly' },
+            { value: 'custom', label: 'Custom' }
+          ].map((option) => (
+            <button
+              key={option.value}
+              onClick={() => setApplyFrequency(option.value)}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                applyFrequency === option.value
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
-        
+      </div>
+      
+      {/* Options based on selected frequency */}
+      <div className="space-y-4">
+        {/* Hourly interval selector */}
         {applyFrequency === 'hourly' && (
-          <div className="space-y-2">
-            <Label htmlFor="applyHourlyInterval">Run every</Label>
-            <div className="flex items-center">
-              <Input
-                id="applyHourlyInterval"
-                type="number"
-                min="1"
-                max="12"
-                value={applyHourlyInterval}
-                onChange={(e) => setApplyHourlyInterval(e.target.value)}
-                className="w-20 mr-2"
-              />
-              <span>hour(s)</span>
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+              <Clock className="h-4 w-4 text-primary" />
             </div>
+            <span className="text-muted-foreground">Apply every</span>
+            <select 
+              value={applyHourlyInterval} 
+              onChange={(e) => setApplyHourlyInterval(parseInt(e.target.value))}
+              className="w-16 rounded-md border-0 bg-muted/30 px-2 py-1 text-sm"
+            >
+              {[1, 2, 3, 4, 6, 8, 12].map(hours => (
+                <option key={hours} value={hours}>{hours}</option>
+              ))}
+            </select>
+            <span className="text-muted-foreground">hours</span>
           </div>
         )}
 
+        {/* Day selector for weekly/custom - visual calendar style */}
         {(applyFrequency === 'weekly' || applyFrequency === 'custom') && (
-          <div className="space-y-2">
-            <Label>Run on these days</Label>
-            <div className="flex gap-2 mt-1">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+                <Calendar className="h-4 w-4 text-primary" />
+              </div>
+              <span className="text-muted-foreground">Apply on</span>
+            </div>
+            
+            <div className="grid grid-cols-7 gap-2">
               {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
                 <button
                   key={index}
                   type="button"
-                  className={`w-9 h-9 rounded-full flex items-center justify-center text-sm ${
-                    applyDays.includes(index) 
-                      ? 'bg-primary text-primary-foreground'
-                      : 'border hover:bg-muted'
-                  }`}
+                  className={`
+                    w-10 h-10 flex items-center justify-center rounded-full transition-colors
+                    ${applyDays.includes(index) 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'border-2 border-muted hover:border-primary/50'}
+                  `}
                   onClick={() => {
                     if (applyDays.includes(index)) {
                       setApplyDays(applyDays.filter(d => d !== index));
@@ -631,28 +645,28 @@ const renderScheduleStep = () => {
           </div>
         )}
 
+        {/* Time picker for non-hourly options - styled time picker */}
         {applyFrequency !== 'hourly' && (
-          <div className="space-y-2">
-            <Label htmlFor="applyTime">Run Time</Label>
-            <Input
-              id="applyTime"
-              type="time"
-              value={applyTime}
-              onChange={(e) => setApplyTime(e.target.value)}
-            />
-            <p className="text-sm text-muted-foreground">When to run the automation each day (24-hour format)</p>
+          <div className="flex items-center gap-2 pt-2">
+            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+              <Clock className="h-4 w-4 text-primary" />
+            </div>
+            <span className="text-muted-foreground">Apply at</span>
+            <div className="relative flex items-center">
+              <Input
+                type="time"
+                value={applyTime}
+                onChange={(e) => setApplyTime(e.target.value)}
+                className="w-32 pl-3 border-0 bg-muted/30 h-9"
+              />
+            </div>
+            <span className="text-xs text-muted-foreground">(24h format)</span>
           </div>
         )}
-
-        <div className="mt-4 p-4 border rounded-md bg-muted/30">
-          <h3 className="font-medium mb-1">Next Scheduled Run</h3>
-          <p className="text-lg">{getNextRunTime()}</p>
-        </div>
       </div>
     </div>
   );
 };
-
 // Render the notifications step
 const renderNotificationsStep = () => {
   return (
