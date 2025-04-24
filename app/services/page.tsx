@@ -7,7 +7,6 @@ import { AutoJobApplicationModal } from "@/components/auto-job-modal";
 import { Briefcase, Plus } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Toaster } from "sonner";
-
 export default function AutoJobPage() {
   const [modalOpen, setModalOpen] = useState(false);
 
