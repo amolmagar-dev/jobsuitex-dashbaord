@@ -1,5 +1,5 @@
 // components/auto-job-modal/index.tsx
-import React from "react";
+import React, { useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -8,7 +8,6 @@ import { ChevronRight, ChevronLeft } from "lucide-react";
 // Use @ imports for better path management
 import { useJobConfig } from "@/components/auto-job-modal/use-job-config";
 import { StepIndicator } from "@/components/auto-job-modal/calls/step-indicator";
-import { SavedConfigSelector } from "@/components/auto-job-modal/calls/saved-config-selector";
 
 // Step components with consistent naming and @ imports
 import PortalCredentialsStep from "@/components/auto-job-modal/steps/portal-credentials-step";
@@ -27,19 +26,14 @@ export function AutoJobApplicationModal({ open, onOpenChange }: AutoJobApplicati
   // Core state
   const {
     currentStep,
-    configs,
-    currentConfigId,
+    currentPortal,
     loading,
     credentialsSaved,
     jobKeywords,
     jobLocation,
-    configName,
     setCurrentStep,
     goToStep,
-    fetchConfigs,
-    fetchConfigById,
-    setCurrentConfigId,
-    deleteConfig,
+    setCurrentPortal,
     nextStep,
     prevStep,
     state,
@@ -52,9 +46,9 @@ export function AutoJobApplicationModal({ open, onOpenChange }: AutoJobApplicati
     { id: 3, title: "AI Training", icon: null },
     { id: 4, title: "Schedule", icon: null },
     { id: 5, title: "Notifications", icon: null },
-    { id: 6, title: "Review & Save", icon: null },
+    { id: 6, title: "Review & Execute", icon: null },
   ];
-
+  
   // Main step content selector
   const renderStepContent = () => {
     switch (currentStep) {
@@ -75,38 +69,40 @@ export function AutoJobApplicationModal({ open, onOpenChange }: AutoJobApplicati
     }
   };
 
-  const handleNextStep = () => {
-    // Validate current step before proceeding
-    if (currentStep === 1 && !credentialsSaved) {
-      toast.error("Please save your credentials before proceeding");
-      return;
-    }
-
-    if (currentStep === 2 && (!jobKeywords || !jobLocation)) {
-      toast.error("Job keywords and location are required");
-      return;
-    }
-
-    nextStep();
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{currentConfigId ? `Edit: ${configName}` : steps[currentStep - 1].title}</DialogTitle>
+          <DialogTitle>
+            {currentPortal.charAt(0).toUpperCase() + currentPortal.slice(1)} Job Automation
+          </DialogTitle>
         </DialogHeader>
 
-        {/* Saved configs dropdown - only visible in first step */}
-        {currentStep === 1 && configs.length > 0 && (
-          <SavedConfigSelector
-            configs={configs}
-            currentConfigId={currentConfigId}
-            setCurrentConfigId={setCurrentConfigId}
-            fetchConfigById={fetchConfigById}
-            deleteConfig={deleteConfig}
-            loading={loading}
-          />
+        {/* Portal selector - visible in step 1 */}
+        {currentStep === 1 && (
+          <div className="mb-4 p-3 border rounded-md bg-muted/10">
+            <div className="portal-selector flex flex-wrap gap-2">
+              {state.portalData.map((portal) => (
+                <div
+                  key={portal.id}
+                  className={`flex items-center p-2 border rounded-lg cursor-pointer
+                    ${state.selectedPortal === portal.name.toLowerCase() ? "border-primary bg-primary/5" : ""}
+                    ${!portal.available ? "opacity-50 cursor-not-allowed" : "hover:border-primary/50"}`}
+                  onClick={() => {
+                    if (portal.available) {
+                      state.setSelectedPortal(portal.name.toLowerCase());
+                      setCurrentPortal(portal.name.toLowerCase());
+                    }
+                  }}
+                >
+                  <div className="portal-letter bg-primary/10 text-primary font-semibold w-8 h-8 rounded-full flex items-center justify-center mr-2">
+                    {portal.id}
+                  </div>
+                  <span className="font-medium">{portal.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Step Indicator */}
@@ -134,7 +130,7 @@ export function AutoJobApplicationModal({ open, onOpenChange }: AutoJobApplicati
           )}
 
           {currentStep < steps.length ? (
-            <Button onClick={handleNextStep}>
+            <Button onClick={nextStep}>
               {currentStep === steps.length - 1 ? "Review" : "Continue"}
               <ChevronRight size={16} className="ml-2" />
             </Button>

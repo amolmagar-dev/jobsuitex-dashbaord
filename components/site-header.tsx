@@ -39,7 +39,7 @@ export function SiteHeader() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="gap-2">
                 <Avatar className="h-8 w-8 rounded-full">
-                  <AvatarImage src="/avatars/01.png" alt={fullName} />
+                  {/* <AvatarImage src="/avatars/01.png" alt={fullName} /> */}
                   <AvatarFallback>{initials}</AvatarFallback>
                 </Avatar>
                 <span className="hidden md:inline-flex">{fullName}</span>

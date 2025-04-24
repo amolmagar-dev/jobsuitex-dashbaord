@@ -1,11 +1,9 @@
 // components/auto-job-modal/steps/ReviewStep.tsx
 import React from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Briefcase, Settings, Calendar, PlayCircle, Save, RotateCw } from "lucide-react";
+import { Briefcase, Settings, Calendar, Bell, PlayCircle, RotateCw } from "lucide-react";
 
 interface ReviewStepProps {
   state: any; // Replace 'any' with a more specific type if possible
@@ -14,13 +12,10 @@ interface ReviewStepProps {
 
 export function ReviewStep({ state, goToStep }: ReviewStepProps) {
   const {
-    configName,
-    setConfigName,
     isActive,
     setIsActive,
     loading,
-    currentConfigId,
-    saveConfig,
+    toggleActiveStatus,
     runNow,
     selectedPortal,
     username,
@@ -29,34 +24,31 @@ export function ReviewStep({ state, goToStep }: ReviewStepProps) {
     jobLocation,
     jobExperience,
     jobType,
+    minRating,
+    maxApplications,
     applyFrequency,
     applyHourlyInterval,
     applyTime,
     applyDays,
+    emailNotifications,
+    whatsappNotifications,
     getNextRunTime,
   } = state;
 
   return (
     <div className="space-y-6">
       <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="configName">Configuration Name</Label>
-          <Input
-            id="configName"
-            value={configName}
-            onChange={(e) => setConfigName(e.target.value)}
-            placeholder="Enter a name for this configuration"
-          />
-        </div>
-
         <div className="flex items-center justify-between py-3 border-b">
           <div>
-            <h3 className="font-medium">Activate Configuration</h3>
+            <h3 className="font-medium">Activate Job Automation</h3>
             <p className="text-sm text-muted-foreground">
               When active, the system will automatically apply to jobs based on your schedule
             </p>
           </div>
-          <Switch checked={isActive} onCheckedChange={setIsActive} />
+          <Switch checked={isActive} onCheckedChange={(checked) => {
+            setIsActive(checked);
+            toggleActiveStatus();
+          }} />
         </div>
 
         <div className="space-y-4 mt-4">
@@ -118,6 +110,14 @@ export function ReviewStep({ state, goToStep }: ReviewStepProps) {
                 <span className="text-muted-foreground">Job Type:</span>
                 <span className="capitalize">{jobType}</span>
               </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Min. Rating:</span>
+                <span>{minRating}/5</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Max Applications:</span>
+                <span>{maxApplications} per run</span>
+              </div>
             </div>
           </div>
 
@@ -153,8 +153,8 @@ export function ReviewStep({ state, goToStep }: ReviewStepProps) {
                   <span className="text-muted-foreground">Days:</span>
                   <span>
                     {applyDays.map((day: number) => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][day]).join(", ")}
-                    </span>
-                  </div>
+                  </span>
+                </div>
               )}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Next Run:</span>
@@ -162,16 +162,52 @@ export function ReviewStep({ state, goToStep }: ReviewStepProps) {
               </div>
             </div>
           </div>
+
+          <div className="border rounded-md p-4">
+            <div className="flex justify-between items-center mb-3">
+              <div className="flex items-center gap-2">
+                <Bell size={18} />
+                <h3 className="font-medium">Notifications</h3>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => goToStep(5)}>
+                Edit
+              </Button>
+            </div>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Email Notifications:</span>
+                <Badge
+                  variant={emailNotifications ? "default" : "outline"}
+                  className={emailNotifications ? "bg-green-100 text-green-800 hover:bg-green-100" : ""}
+                >
+                  {emailNotifications ? "Enabled" : "Disabled"}
+                </Badge>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">WhatsApp Notifications:</span>
+                <Badge
+                  variant={whatsappNotifications ? "default" : "outline"}
+                  className={whatsappNotifications ? "bg-green-100 text-green-800 hover:bg-green-100" : ""}
+                >
+                  {whatsappNotifications ? "Enabled" : "Disabled"}
+                </Badge>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="flex gap-3 mt-6">
-          <Button variant="outline" onClick={runNow} disabled={loading || !currentConfigId}>
-            <PlayCircle size={16} className="mr-2" />
-            Run Now
-          </Button>
-          <Button onClick={saveConfig} disabled={loading}>
-            {loading ? <RotateCw size={16} className="mr-2 animate-spin" /> : <Save size={16} className="mr-2" />}
-            {currentConfigId ? "Update Configuration" : "Save Configuration"}
+        <div className="pt-4">
+          <Button 
+            onClick={runNow} 
+            disabled={loading || !credentialsSaved} 
+            className="w-full"
+          >
+            {loading ? (
+              <RotateCw size={16} className="mr-2 animate-spin" />
+            ) : (
+              <PlayCircle size={16} className="mr-2" />
+            )}
+            Run Now for {selectedPortal.charAt(0).toUpperCase() + selectedPortal.slice(1)}
           </Button>
         </div>
       </div>

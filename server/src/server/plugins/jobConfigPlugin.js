@@ -13,14 +13,18 @@ async function jobConfigPlugin(fastify, options) {
 
     // Decorate fastify instance with job config methods
     fastify.decorate('jobConfigModel', {
-        create: (userId, configData) => JobConfigModel.create(fastify, userId, configData),
-        findByUser: (userId) => JobConfigModel.findByUser(fastify, userId),
-        findById: (configId, userId) => JobConfigModel.findById(fastify, configId, userId),
-        update: (configId, userId, updateData) => JobConfigModel.update(fastify, configId, userId, updateData),
-        delete: (configId, userId) => JobConfigModel.delete(fastify, configId, userId),
-        findDueForExecution: () => JobConfigModel.findDueForExecution(fastify),
-        updateNextRunTime: (configId) => JobConfigModel.updateNextRunTime(fastify, configId)
-    });
+      createOrUpdate: (userId, configData) => JobConfigModel.createOrUpdate(fastify, userId, configData),
+      findByUser: (userId) => JobConfigModel.findByUser(fastify, userId),
+      findById: (configId, userId) => JobConfigModel.findById(fastify, configId, userId),
+      update: (configId, userId, updateData) => JobConfigModel.update(fastify, configId, userId, updateData),
+      delete: (configId, userId) => JobConfigModel.delete(fastify, configId, userId),
+      findDueForExecution: () => JobConfigModel.findDueForExecution(fastify),
+      updateNextRunTime: (configId) => JobConfigModel.updateNextRunTime(fastify, configId),
+      updatePortalConfig: (configId, userId, portalType, portalData) => 
+          JobConfigModel.updatePortalConfig(fastify, configId, userId, portalType, portalData),
+      deletePortal: (configId, userId, portalType) => 
+          JobConfigModel.deletePortal(fastify, configId, userId, portalType)
+  });
 }
 
 export default fp(jobConfigPlugin, {

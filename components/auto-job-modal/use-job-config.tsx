@@ -1,17 +1,16 @@
 // components/auto-job-modal/useJobConfig.tsx
-import { useState, useEffect, SetStateAction } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { portalCredentialService } from "@/services/portalCredentialService";
 import { jobConfigService } from "@/services/jobConfigService";
 
-export function useJobConfig(isOpen: unknown) {
+export function useJobConfig(isOpen: boolean) {
   // Core state
   const [currentStep, setCurrentStep] = useState(1);
-  const [configName, setConfigName] = useState("My Auto Job Config");
   const [isActive, setIsActive] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [configs, setConfigs] = useState([]);
-  const [currentConfigId, setCurrentConfigId] = useState<string | null>(null);
+  const [jobConfig, setJobConfig] = useState<any>(null);
+  const [currentPortal, setCurrentPortal] = useState<string>("naukri");
 
   // Step 1: Portal Credentials state
   const [selectedPortal, setSelectedPortal] = useState("naukri");
@@ -55,7 +54,7 @@ export function useJobConfig(isOpen: unknown) {
   // Initialize on open
   useEffect(() => {
     if (isOpen) {
-      fetchConfigs();
+      fetchJobConfig();
       fetchPortalCredentials(selectedPortal);
     }
   }, [isOpen]);
@@ -64,103 +63,99 @@ export function useJobConfig(isOpen: unknown) {
   useEffect(() => {
     if (isOpen) {
       fetchPortalCredentials(selectedPortal);
+      loadPortalConfig(selectedPortal);
     }
-  }, [selectedPortal, isOpen]);
+  }, [selectedPortal, isOpen, jobConfig]);
 
   // API Functions =================================================
 
-  // Fetch saved configurations
-  const fetchConfigs = async () => {
+  // Fetch job configuration
+  const fetchJobConfig = async () => {
     try {
       setLoading(true);
-      const response = await jobConfigService.getConfigs();
+      const response = await jobConfigService.getConfig();
 
-      if (response.configs && Array.isArray(response.configs)) {
-        setConfigs(response.configs);
-
-        // If there's at least one config, select the first one
-        if (response.configs.length > 0) {
-          const firstConfig = response.configs[0];
-          setCurrentConfigId(firstConfig.id);
-          fetchConfigById(firstConfig.id);
+      if (response.success && response.config) {
+        setJobConfig(response.config);
+        setIsActive(response.config.isActive);
+        
+        // Load AI training data
+        if (response.config.aiTraining?.selfDescription) {
+          setSelfDescription(response.config.aiTraining.selfDescription);
         }
+        
+        // Load schedule settings
+        if (response.config.schedule) {
+          setApplyFrequency(response.config.schedule.frequency || "daily");
+          setApplyDays(response.config.schedule.days || [1, 2, 3, 4, 5]);
+          setApplyTime(response.config.schedule.time || "09:00");
+          setApplyHourlyInterval(response.config.schedule.hourlyInterval || 1);
+        }
+        
+        // Load notification settings
+        if (response.config.notifications) {
+          setEmailNotifications(response.config.notifications.email !== undefined ? response.config.notifications.email : true);
+          setWhatsappNotifications(response.config.notifications.whatsapp || false);
+        }
+        
+        // Load portal-specific config for the currently selected portal
+        loadPortalConfig(selectedPortal);
       } else {
-        setConfigs([]);
+        // Initialize with defaults if no config exists
+        resetToDefaults();
       }
     } catch (error) {
-      console.error("Error fetching configs:", error);
-      toast.error("Failed to load saved configurations");
-      setConfigs([]);
+      console.error("Error fetching job config:", error);
+      toast.error("Failed to load job configuration");
+      resetToDefaults();
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch specific config by ID
-  const fetchConfigById = async (id: any) => {
-    try {
-      setLoading(true);
-      const response = await jobConfigService.getConfig(id);
-
-      if (response && response.config) {
-        loadConfigData(response.config);
-      } else {
-        toast.error("Failed to load configuration");
-      }
-    } catch (error) {
-      console.error("Error fetching config:", error);
-      toast.error("Failed to load configuration details");
-    } finally {
-      setLoading(false);
+  // Load portal-specific configuration
+  const loadPortalConfig = (portalType: string) => {
+    if (!jobConfig || !jobConfig.portals) return;
+    
+    const portalConfig = jobConfig.portals.find((p: any) => p.type === portalType);
+    
+    if (portalConfig) {
+      // Load search criteria
+      setJobKeywords(portalConfig.searchConfig?.keywords || "");
+      setJobLocation(portalConfig.searchConfig?.location || "");
+      setJobExperience(portalConfig.searchConfig?.experience || 2);
+      
+      // Load filter criteria
+      setJobType(portalConfig.jobType || "fulltime");
+      setMinRating(portalConfig.filterConfig?.minRating || 3.5);
+      setMaxApplications(portalConfig.filterConfig?.maxApplications || 10);
+    } else {
+      // Reset portal-specific fields to defaults
+      setJobKeywords("");
+      setJobLocation("");
+      setJobExperience(2);
+      setJobType("fulltime");
+      setMinRating(3.5);
+      setMaxApplications(10);
     }
   };
 
-  // Load config data into state
-  const loadConfigData = (config: {
-    name: any;
-    isActive: any;
-    portal: any;
-    keywords: any;
-    location: any;
-    experience: any;
-    jobType: any;
-    minRating: any;
-    maxApplications: any;
-    selfDescription: any;
-    frequency: any;
-    days: any;
-    time: any;
-    hourlyInterval: any;
-    emailNotifications: boolean | ((prevState: boolean) => boolean) | undefined;
-    whatsappNotifications: any;
-  }) => {
-    // Basic info
-    setConfigName(config.name || "My Auto Job Config");
-    setIsActive(config.isActive || false);
-
-    // Portal info
-    setSelectedPortal(config.portal || "naukri");
-
-    // Search criteria
-    setJobKeywords(config.keywords || "");
-    setJobLocation(config.location || "");
-    setJobExperience(config.experience || 2);
-    setJobType(config.jobType || "fulltime");
-    setMinRating(config.minRating || 3.5);
-    setMaxApplications(config.maxApplications || 10);
-
-    // AI Training
-    setSelfDescription(config.selfDescription || "");
-
-    // Schedule
-    setApplyFrequency(config.frequency || "daily");
-    setApplyDays(config.days || [1, 2, 3, 4, 5]);
-    setApplyTime(config.time || "09:00");
-    setApplyHourlyInterval(config.hourlyInterval || 1);
-
-    // Notifications
-    setEmailNotifications(config.emailNotifications !== undefined ? config.emailNotifications : true);
-    setWhatsappNotifications(config.whatsappNotifications || false);
+  // Reset all form fields to defaults
+  const resetToDefaults = () => {
+    setIsActive(false);
+    setJobKeywords("");
+    setJobLocation("");
+    setJobExperience(2);
+    setJobType("fulltime");
+    setMinRating(3.5);
+    setMaxApplications(10);
+    setSelfDescription("");
+    setApplyFrequency("daily");
+    setApplyDays([1, 2, 3, 4, 5]);
+    setApplyTime("09:00");
+    setApplyHourlyInterval(1);
+    setEmailNotifications(true);
+    setWhatsappNotifications(false);
   };
 
   // Step 1: Portal Credentials API Functions
@@ -252,6 +247,49 @@ export function useJobConfig(isOpen: unknown) {
     }
   };
 
+  // Step 2: Save portal configuration
+  const savePortalConfig = async () => {
+    try {
+      setLoading(true);
+      
+      if (!jobKeywords || !jobLocation) {
+        toast.error("Job keywords and location are required");
+        return;
+      }
+
+      const portalData = {
+        isActive: true,
+        searchConfig: {
+          keywords: jobKeywords,
+          location: jobLocation,
+          experience: jobExperience
+        },
+        filterConfig: {
+          minRating,
+          maxApplications,
+          jobType
+        }
+      };
+
+      const response = await jobConfigService.updatePortalConfig(selectedPortal, portalData);
+
+      if (response && response.success) {
+        setJobConfig(response.config);
+        toast.success(`${selectedPortal} configuration saved successfully`);
+        return true;
+      } else {
+        toast.error("Failed to save portal configuration");
+        return false;
+      }
+    } catch (error) {
+      console.error("Error saving portal config:", error);
+      toast.error("Failed to save portal configuration");
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Step 3: AI Profile Analysis
   const analyzeProfile = async () => {
     try {
@@ -262,7 +300,7 @@ export function useJobConfig(isOpen: unknown) {
         return;
       }
 
-      const response = await jobConfigService.analyzeProfile(currentConfigId || "new", selectedPortal);
+      const response = await jobConfigService.analyzeProfile(selectedPortal);
 
       if (response && response.success && response.profileDescription) {
         setSelfDescription(response.profileDescription);
@@ -296,90 +334,114 @@ export function useJobConfig(isOpen: unknown) {
         return;
       }
 
-      const response = await jobConfigService.saveAITraining(currentConfigId || "new", {
+      const response = await jobConfigService.saveAITraining({
         selfDescription,
       });
 
       if (response && response.success) {
         toast.success("AI training data saved");
+        return true;
       } else {
-        toast.success("AI training data saved");
+        toast.error("Failed to save AI training data");
+        return false;
       }
     } catch (error) {
       console.error("Error saving AI training:", error);
       toast.error("Failed to save AI training data");
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
-  // Step 6: Save Entire Configuration
-  const saveConfig = async () => {
+  // Step 4: Save Schedule Settings
+  const saveSchedule = async () => {
     try {
       setLoading(true);
 
-      // Validate required fields
-      if (!configName || !jobKeywords || !jobLocation) {
-        toast.error("Name, job keywords, and location are required");
-        return;
-      }
-
-      // Build configuration object
-      const configData = {
-        name: configName,
-        isActive,
-        portal: selectedPortal,
-        keywords: jobKeywords,
-        location: jobLocation,
-        experience: jobExperience,
-        jobType,
-        minRating,
-        maxApplications,
-        selfDescription,
+      const scheduleData = {
         frequency: applyFrequency,
         days: applyDays,
         time: applyTime,
-        hourlyInterval: applyHourlyInterval,
-        emailNotifications,
-        whatsappNotifications,
+        hourlyInterval: applyHourlyInterval
       };
 
-      let response;
-
-      if (currentConfigId) {
-        response = await jobConfigService.updateConfig(currentConfigId, configData);
-      } else {
-        response = await jobConfigService.createConfig(configData);
-      }
+      const response = await jobConfigService.updateSchedule(scheduleData);
 
       if (response && response.success) {
-        if (response.config && response.config.id) {
-          setCurrentConfigId(response.config.id);
-        }
-
-        toast.success(currentConfigId ? "Configuration updated successfully" : "Configuration created successfully");
+        toast.success("Schedule settings saved");
+        return true;
       } else {
-        toast.error(response?.message || "Failed to save configuration");
+        toast.error("Failed to save schedule settings");
+        return false;
       }
     } catch (error) {
-      console.error("Error saving config:", error);
-      toast.error("Failed to save configuration");
+      console.error("Error saving schedule:", error);
+      toast.error("Failed to save schedule settings");
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
-  // Step 6: Run Job Now
-  const runNow = async () => {
+  // Step 5: Save Notification Settings
+  const saveNotifications = async () => {
     try {
       setLoading(true);
 
-      if (!currentConfigId) {
-        toast.error("You must have a saved configuration to run it");
-        return;
-      }
+      const notificationData = {
+        email: emailNotifications,
+        whatsapp: whatsappNotifications,
+        notifyAbout: {
+          applications: true, // Default value
+          interviews: true,   // Default value
+          errors: true        // Default value
+        }
+      };
 
-      const response = await jobConfigService.runConfig(currentConfigId);
+      const response = await jobConfigService.updateNotifications(notificationData);
+
+      if (response && response.success) {
+        toast.success("Notification settings saved");
+        return true;
+      } else {
+        toast.error("Failed to save notification settings");
+        return false;
+      }
+    } catch (error) {
+      console.error("Error saving notifications:", error);
+      toast.error("Failed to save notification settings");
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Toggle Job Config Active Status
+  const toggleActiveStatus = async () => {
+    try {
+      setLoading(true);
+      const response = await jobConfigService.toggleActive();
+
+      if (response && response.success) {
+        setIsActive(response.isActive);
+        toast.success(response.message);
+      } else {
+        toast.error("Failed to update active status");
+      }
+    } catch (error) {
+      console.error("Error toggling active status:", error);
+      toast.error("Failed to update active status");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Run Job Config
+  const runNow = async () => {
+    try {
+      setLoading(true);
+      const response = await jobConfigService.runConfig(selectedPortal as any);
 
       if (response && response.success) {
         toast.success("Job execution triggered successfully");
@@ -394,29 +456,52 @@ export function useJobConfig(isOpen: unknown) {
     }
   };
 
-  // Delete a job config
-  const deleteConfig = async () => {
-    try {
-      if (confirm("Are you sure you want to delete this configuration?")) {
-        setLoading(true);
-        await jobConfigService.deleteConfig(currentConfigId);
-        setCurrentConfigId(null);
-        setConfigName("My Auto Job Config");
-        fetchConfigs();
-        toast.success("Configuration deleted successfully");
-      }
-    } catch (error) {
-      toast.error("Failed to delete configuration");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Navigation Functions ==========================================
 
   const nextStep = () => {
     if (currentStep < 6) {
-      setCurrentStep(currentStep + 1);
+      // Validate and save current step before proceeding
+      const validateAndSaveStep = async () => {
+        let isValid = true;
+        
+        // Validate step 1: Portal credentials
+        if (currentStep === 1 && !credentialsSaved) {
+          toast.error("Please save your credentials before proceeding");
+          isValid = false;
+        }
+        
+        // Validate and save step 2: Search criteria
+        if (currentStep === 2) {
+          if (!jobKeywords || !jobLocation) {
+            toast.error("Job keywords and location are required");
+            isValid = false;
+          } else {
+            // Save portal configuration
+            isValid = (await savePortalConfig()) ?? false;
+          }
+        }
+        
+        // Save step 3: AI training
+        if (currentStep === 3 && selfDescription.trim()) {
+          isValid = (await saveAITraining()) ?? false;
+        }
+        
+        // Save step 4: Schedule
+        if (currentStep === 4) {
+          isValid = await saveSchedule();
+        }
+        
+        // Save step 5: Notifications
+        if (currentStep === 5) {
+          isValid = await saveNotifications();
+        }
+        
+        if (isValid) {
+          setCurrentStep(currentStep + 1);
+        }
+      };
+      
+      validateAndSaveStep();
     }
   };
 
@@ -478,12 +563,10 @@ export function useJobConfig(isOpen: unknown) {
   // Group all the state and functions to return
   const state = {
     // Core state
-    configName,
-    setConfigName,
     isActive,
     setIsActive,
     loading,
-    currentConfigId,
+    toggleActiveStatus,
 
     // Step 1: Portal Credentials
     selectedPortal,
@@ -512,6 +595,7 @@ export function useJobConfig(isOpen: unknown) {
     setMinRating,
     maxApplications,
     setMaxApplications,
+    savePortalConfig,
 
     // Step 3: AI Training
     selfDescription,
@@ -529,15 +613,16 @@ export function useJobConfig(isOpen: unknown) {
     setApplyTime,
     applyHourlyInterval,
     setApplyHourlyInterval,
+    saveSchedule,
 
     // Step 5: Notifications
     emailNotifications,
     setEmailNotifications,
     whatsappNotifications,
     setWhatsappNotifications,
+    saveNotifications,
 
-    // Step 6: Review & Save
-    saveConfig,
+    // Step 6: Review & Execute
     runNow,
     getNextRunTime,
   };
@@ -545,19 +630,15 @@ export function useJobConfig(isOpen: unknown) {
   return {
     // Core state and navigation
     currentStep,
-    configs,
-    currentConfigId,
+    currentPortal,
     loading,
     credentialsSaved,
     jobKeywords,
     jobLocation,
-    configName,
     setCurrentStep,
     goToStep,
-    fetchConfigs,
-    fetchConfigById,
-    setCurrentConfigId,
-    deleteConfig,
+    fetchJobConfig,
+    setCurrentPortal,
     nextStep,
     prevStep,
     state,
