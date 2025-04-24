@@ -268,6 +268,26 @@ class JobRunner {
                 return;
             }
 
+            // Check for self-description before proceeding
+            if (!job.aiTraining?.selfDescription) {
+                this.app.log.error(`Job ${jobId} has no AI self-description, aborting execution`);
+
+                // Record the aborted job run
+                await this.app.mongo.db.collection('jobRuns').insertOne({
+                    jobConfig: job._id,
+                    user: job.user,
+                    startTime: new Date(),
+                    endTime: new Date(),
+                    jobsFound: 0,
+                    jobsApplied: 0,
+                    success: false,
+                    message: 'Job aborted: No AI self-description available',
+                    createdAt: new Date()
+                });
+
+                return;
+            }
+
             // Get user
             const user = await this.app.mongo.db.collection('users').findOne({
                 _id: new this.app.mongo.ObjectId(job.user)
@@ -278,44 +298,80 @@ class JobRunner {
                 return;
             }
 
-            // Get portal credentials
-            let credentials = await this.app.portalCredentialModel.getLoginCredentials(job.user, job.portal);
-
-            if (!credentials) {
-                this.app.log.warn(`No valid credentials found for job ${jobId}, portal: ${job.portal}`);
+            // Process each active portal in the job config
+            if (!job.portals || job.portals.length === 0) {
+                this.app.log.warn(`Job ${jobId} has no portals configured`);
                 return;
             }
 
-            // Add credentials to job config for automation
-            job.credentials = credentials;
-
-            // Initialize browser and run automation based on portal type
+            // Initialize browser once for all portals
             const browser = await browserInstance.getBrowser();
 
-            let result;
-            switch (job.portal) {
-                case 'naukri':
-                    const naukriAutomation = new NaukriJobAutomation(browser, job, this.app, user, credentials);
-                    result = await naukriAutomation.start();
-                    break;
-                // Add cases for other portals as needed
-                default:
-                    throw new Error(`Unsupported portal: ${job.portal}`);
+            try {
+                // Process each active portal
+                for (const portal of job.portals) {
+                    if (!portal.isActive) {
+                        this.app.log.info(`Skipping inactive portal: ${portal.type}`);
+                        continue;
+                    }
+
+                    this.app.log.info(`Processing portal: ${portal.type}`);
+
+                    // Get portal credentials
+                    let credentials = await this.app.portalCredentialModel.getLoginCredentials(job.user, portal.type);
+
+                    if (!credentials) {
+                        this.app.log.warn(`No valid credentials found for job ${jobId}, portal: ${portal.type}`);
+                        continue;
+                    }
+
+                    try {
+                        // Create a portal-specific job config by combining the base job config with the portal config
+                        const portalJob = {
+                            ...job,
+                            portal: portal.type,
+                            searchConfig: portal.searchConfig,
+                            filterConfig: portal.filterConfig,
+                            credentials
+                        };
+
+                        switch (portal.type) {
+                            case 'naukri':
+                                const naukriAutomation = new NaukriJobAutomation(browser, portalJob, this.app, user, credentials);
+                                await naukriAutomation.start();
+                                break;
+                            case 'linkedin':
+                                // LinkedIn automation when implemented
+                                this.app.log.info('LinkedIn automation not yet implemented');
+                                break;
+                            case 'indeed':
+                                // Indeed automation when implemented
+                                this.app.log.info('Indeed automation not yet implemented');
+                                break;
+                            case 'monster':
+                                // Monster automation when implemented
+                                this.app.log.info('Monster automation not yet implemented');
+                                break;
+                            default:
+                                this.app.log.warn(`Unsupported portal type: ${portal.type}`);
+                        }
+                    } catch (error) {
+                        this.app.log.error({ err: error }, `Error in portal automation for portal ${portal.type}, job ${jobId}`);
+                        // Continue with the next portal
+                    }
+                }
+            } finally {
+                // Close the browser after all portals are processed
+                try {
+                    await browser.closeBrowser();
+                } catch (error) {
+                    this.app.log.error({ err: error }, `Error closing browser for job ${jobId}`);
+                }
             }
 
-            // Update the job's last run and next run time
-            await JobConfigModel.updateNextRunTime(this.app, jobId);
-
-            // Store results if successful
-            if (result && result.success && result.jobsApplied > 0) {
-                await this.storeJobResults(job, result);
-            }
-
-            this.app.log.info(`Job ${jobId} executed successfully, applied to ${result?.jobsApplied || 0} jobs`);
-            return result;
+            this.app.log.info(`Job ${jobId} execution completed`);
         } catch (error) {
             this.app.log.error({ err: error }, `Error executing job ${jobId}`);
-            throw error; // Re-throw to be caught by processQueue
         }
     }
 

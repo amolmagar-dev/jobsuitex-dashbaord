@@ -1,9 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { PepareAndTrainBot } from './BotTrainer.js';
 import dotenv from 'dotenv';
 dotenv.config();
-
-let instance = null;
 
 export class GeminiBot {
   constructor(systemInstruction) {
@@ -14,18 +11,10 @@ export class GeminiBot {
     });
   }
 
-  static async getInstance() {
-    if (!instance) {
-      const systemInstruction = await PepareAndTrainBot();
-      if (!systemInstruction) return false;
-      instance = new GeminiBot(systemInstruction);
-    }
-    return instance;
-  }
-
-  static async trainBotOnSelfDescription(selfDescription) {
-    instance = new GeminiBot(selfDescription); // Replace instance
-    console.log('🔁 System instruction updated and bot instance refreshed');
+  // Create a bot with instructions from job config
+  static createFromJobConfig(jobConfig) {
+    const selfDescription = jobConfig.aiTraining?.selfDescription || '';
+    return new GeminiBot(selfDescription);
   }
 
   async ask(question) {

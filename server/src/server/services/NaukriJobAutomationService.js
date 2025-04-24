@@ -19,11 +19,6 @@ export class NaukriJobAutomation {
         this.sortBy = process.env.JOB_SHORT_BY || "Date";
     }
 
-    async trainBot() {
-        this.bot = await GeminiBot.getInstance();
-        GeminiBot.trainBotOnSelfDescription(this.jobConfig.aiTraining.selfDescription);
-    }
-
     async loginToNaukri(page) {
         await page.goto('https://www.naukri.com/', { waitUntil: 'networkidle2' });
         await page.click("a[title='Jobseeker Login']");
@@ -549,7 +544,8 @@ export class NaukriJobAutomation {
 
     async start() {
         try {
-            this.trainBot();
+            // Set up the AI bot
+            this.bot = GeminiBot.createFromJobConfig(this.jobConfig);
             const page = await this.browser.newPage();
 
             await page.setUserAgent(
