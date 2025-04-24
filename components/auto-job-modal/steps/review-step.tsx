@@ -1,24 +1,39 @@
-
-
 // components/auto-job-modal/steps/ReviewStep.tsx
-import React from 'react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Briefcase, Settings, Calendar, PlayCircle, Save, RotateCw } from 'lucide-react';
+import React from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Briefcase, Settings, Calendar, PlayCircle, Save, RotateCw } from "lucide-react";
 
-export function ReviewStep({ state, goToStep }) {
+interface ReviewStepProps {
+  state: any; // Replace 'any' with a more specific type if possible
+  goToStep: (step: number) => void;
+}
+
+export function ReviewStep({ state, goToStep }: ReviewStepProps) {
   const {
-    configName, setConfigName,
-    isActive, setIsActive,
-    loading, currentConfigId,
-    saveConfig, runNow,
-    selectedPortal, username, credentialsSaved,
-    jobKeywords, jobLocation, jobExperience, jobType,
-    applyFrequency, applyHourlyInterval, applyTime, applyDays,
-    getNextRunTime
+    configName,
+    setConfigName,
+    isActive,
+    setIsActive,
+    loading,
+    currentConfigId,
+    saveConfig,
+    runNow,
+    selectedPortal,
+    username,
+    credentialsSaved,
+    jobKeywords,
+    jobLocation,
+    jobExperience,
+    jobType,
+    applyFrequency,
+    applyHourlyInterval,
+    applyTime,
+    applyDays,
+    getNextRunTime,
   } = state;
 
   return (
@@ -33,18 +48,17 @@ export function ReviewStep({ state, goToStep }) {
             placeholder="Enter a name for this configuration"
           />
         </div>
-        
+
         <div className="flex items-center justify-between py-3 border-b">
           <div>
             <h3 className="font-medium">Activate Configuration</h3>
-            <p className="text-sm text-muted-foreground">When active, the system will automatically apply to jobs based on your schedule</p>
+            <p className="text-sm text-muted-foreground">
+              When active, the system will automatically apply to jobs based on your schedule
+            </p>
           </div>
-          <Switch 
-            checked={isActive}
-            onCheckedChange={setIsActive}
-          />
+          <Switch checked={isActive} onCheckedChange={setIsActive} />
         </div>
-        
+
         <div className="space-y-4 mt-4">
           <div className="border rounded-md p-4">
             <div className="flex justify-between items-center mb-3">
@@ -67,13 +81,16 @@ export function ReviewStep({ state, goToStep }) {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Status:</span>
-                <Badge variant={credentialsSaved ? "default" : "outline"} className={credentialsSaved ? "bg-green-100 text-green-800 hover:bg-green-100" : ""}>
-                  {credentialsSaved ? 'Verified' : 'Not Verified'}
+                <Badge
+                  variant={credentialsSaved ? "default" : "outline"}
+                  className={credentialsSaved ? "bg-green-100 text-green-800 hover:bg-green-100" : ""}
+                >
+                  {credentialsSaved ? "Verified" : "Not Verified"}
                 </Badge>
               </div>
             </div>
           </div>
-          
+
           <div className="border rounded-md p-4">
             <div className="flex justify-between items-center mb-3">
               <div className="flex items-center gap-2">
@@ -103,7 +120,7 @@ export function ReviewStep({ state, goToStep }) {
               </div>
             </div>
           </div>
-          
+
           <div className="border rounded-md p-4">
             <div className="flex justify-between items-center mb-3">
               <div className="flex items-center gap-2">
@@ -119,25 +136,25 @@ export function ReviewStep({ state, goToStep }) {
                 <span className="text-muted-foreground">Frequency:</span>
                 <span className="capitalize">{applyFrequency}</span>
               </div>
-              {applyFrequency === 'hourly' && (
+              {applyFrequency === "hourly" && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Every:</span>
                   <span>{applyHourlyInterval} hour(s)</span>
                 </div>
               )}
-              {applyFrequency !== 'hourly' && (
+              {applyFrequency !== "hourly" && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Time:</span>
                   <span>{applyTime}</span>
                 </div>
               )}
-              {(applyFrequency === 'weekly' || applyFrequency === 'custom') && (
+              {(applyFrequency === "weekly" || applyFrequency === "custom") && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Days:</span>
                   <span>
-                    {applyDays.map(day => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day]).join(', ')}
-                  </span>
-                </div>
+                    {applyDays.map((day: number) => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][day]).join(", ")}
+                    </span>
+                  </div>
               )}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Next Run:</span>
@@ -146,19 +163,15 @@ export function ReviewStep({ state, goToStep }) {
             </div>
           </div>
         </div>
-        
+
         <div className="flex gap-3 mt-6">
           <Button variant="outline" onClick={runNow} disabled={loading || !currentConfigId}>
             <PlayCircle size={16} className="mr-2" />
             Run Now
           </Button>
           <Button onClick={saveConfig} disabled={loading}>
-            {loading ? (
-              <RotateCw size={16} className="mr-2 animate-spin" />
-            ) : (
-              <Save size={16} className="mr-2" />
-            )}
-            {currentConfigId ? 'Update Configuration' : 'Save Configuration'}
+            {loading ? <RotateCw size={16} className="mr-2 animate-spin" /> : <Save size={16} className="mr-2" />}
+            {currentConfigId ? "Update Configuration" : "Save Configuration"}
           </Button>
         </div>
       </div>

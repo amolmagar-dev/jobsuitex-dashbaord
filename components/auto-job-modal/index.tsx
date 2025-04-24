@@ -11,9 +11,9 @@ import { StepIndicator } from "@/components/auto-job-modal/calls/step-indicator"
 import { SavedConfigSelector } from "@/components/auto-job-modal/calls/saved-config-selector";
 
 // Step components with consistent naming and @ imports
-import  PortalCredentialsStep  from "@/components/auto-job-modal/steps/portal-credentials-step";
-import  SearchCriteriaStep  from "@/components/auto-job-modal/steps/search-criteria-step";
-import  ScheduleStep  from "@/components/auto-job-modal/steps/schedule-step";
+import PortalCredentialsStep from "@/components/auto-job-modal/steps/portal-credentials-step";
+import SearchCriteriaStep from "@/components/auto-job-modal/steps/search-criteria-step";
+import ScheduleStep from "@/components/auto-job-modal/steps/schedule-step";
 import { NotificationsStep } from "@/components/auto-job-modal/steps/notifications-step";
 import { ReviewStep } from "@/components/auto-job-modal/steps/review-step";
 import { AITrainingStep } from "./steps/AI-training-step";

@@ -1,8 +1,8 @@
 // components/auto-job-modal/SavedConfigSelector.tsx
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { X } from 'lucide-react';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { X } from "lucide-react";
 
 interface SavedConfigSelectorProps {
   configs: Array<{
@@ -15,20 +15,22 @@ interface SavedConfigSelectorProps {
   deleteConfig: () => Promise<void>;
   loading: boolean;
 }
-export function SavedConfigSelector({ 
-  configs, 
-  currentConfigId, 
-  setCurrentConfigId, 
+export function SavedConfigSelector({
+  configs,
+  currentConfigId,
+  setCurrentConfigId,
   fetchConfigById,
   deleteConfig,
-  loading
+  loading,
 }: SavedConfigSelectorProps) {
   return (
     <div className="mb-4 p-3 border rounded-md bg-muted/10">
-      <Label htmlFor="savedConfigs" className="mb-2 block">Load saved configuration:</Label>
+      <Label htmlFor="savedConfigs" className="mb-2 block">
+        Load saved configuration:
+      </Label>
       <div className="flex gap-2">
-        <select 
-          id="savedConfigs" 
+        <select
+          id="savedConfigs"
           className="flex-1 h-10 px-3 border border-input rounded-md bg-background"
           onChange={(e) => {
             const configId = e.target.value;
@@ -39,22 +41,17 @@ export function SavedConfigSelector({
               setCurrentConfigId(null);
             }
           }}
-          value={currentConfigId || ''}
+          value={currentConfigId || ""}
         >
           <option value="">Select a configuration</option>
-          {configs.map(config => (
+          {configs.map((config) => (
             <option key={config.id} value={config.id}>
               {config.name || `Config #${config.id}`}
             </option>
           ))}
         </select>
         {currentConfigId && (
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={deleteConfig}
-            disabled={loading}
-          >
+          <Button variant="outline" size="icon" onClick={deleteConfig} disabled={loading}>
             <X size={16} />
           </Button>
         )}

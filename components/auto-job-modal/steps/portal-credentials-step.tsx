@@ -1,12 +1,9 @@
 // components/auto-job-modal/steps/PortalCredentialsStep.tsx
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { 
-  User, Lock, EyeOff, Eye, Save, 
-  RotateCw, CheckCircle, AlertCircle 
-} from 'lucide-react';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { User, Lock, EyeOff, Eye, Save, RotateCw, CheckCircle, AlertCircle } from "lucide-react";
 
 interface PortalCredentialsStepProps {
   state: {
@@ -28,24 +25,30 @@ interface PortalCredentialsStepProps {
 
 export default function PortalCredentialsStep({ state }: PortalCredentialsStepProps) {
   const {
-    selectedPortal, setSelectedPortal,
-    username, setUsername,
-    password, setPassword,
+    selectedPortal,
+    setSelectedPortal,
+    username,
+    setUsername,
+    password,
+    setPassword,
     credentialsSaved,
-    showPassword, setShowPassword,
+    showPassword,
+    setShowPassword,
     portalData,
     loading,
     saveCredentials,
-    verifyConnection
+    verifyConnection,
   } = state;
 
   return (
     <div className="space-y-6">
       <div className="portal-selector flex flex-wrap gap-3">
-        {portalData.map(portal => (
+        {portalData.map((portal) => (
           <div
             key={portal.id}
-            className={`flex items-center p-3 border rounded-lg ${portal.id === 'N' ? 'border-primary bg-primary/5' : ''} ${!portal.available ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-primary/50'}`}
+            className={`flex items-center p-3 border rounded-lg ${
+              portal.id === "N" ? "border-primary bg-primary/5" : ""
+            } ${!portal.available ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-primary/50"}`}
             onClick={() => {
               if (portal.available) {
                 setSelectedPortal(portal.name.toLowerCase());
@@ -57,14 +60,14 @@ export default function PortalCredentialsStep({ state }: PortalCredentialsStepPr
             </div>
             <div className="portal-info">
               <div className="font-medium">{portal.name}</div>
-              <div className={`text-xs ${portal.available ? 'text-green-600' : 'text-muted-foreground'}`}>
+              <div className={`text-xs ${portal.available ? "text-green-600" : "text-muted-foreground"}`}>
                 {portal.status}
               </div>
             </div>
           </div>
         ))}
       </div>
-      
+
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="email">
@@ -91,7 +94,9 @@ export default function PortalCredentialsStep({ state }: PortalCredentialsStepPr
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder={credentialsSaved ? "Enter new password only if you want to change it" : "Enter your Naukri password"}
+              placeholder={
+                credentialsSaved ? "Enter new password only if you want to change it" : "Enter your Naukri password"
+              }
             />
             <Button
               type="button"
@@ -114,32 +119,23 @@ export default function PortalCredentialsStep({ state }: PortalCredentialsStepPr
 
         <div className="flex flex-wrap gap-3 mt-4">
           <Button onClick={saveCredentials} disabled={loading}>
-            {loading ? (
-              <RotateCw size={16} className="mr-2 animate-spin" />
-            ) : (
-              <Save size={16} className="mr-2" />
-            )}
+            {loading ? <RotateCw size={16} className="mr-2 animate-spin" /> : <Save size={16} className="mr-2" />}
             Save Credentials
           </Button>
           <Button variant="outline" onClick={verifyConnection} disabled={loading}>
-            <RotateCw size={16} className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <RotateCw size={16} className={`mr-2 ${loading ? "animate-spin" : ""}`} />
             Verify Connection
           </Button>
         </div>
-        
+
         <div className="flex items-start mt-4 p-3 text-sm bg-amber-50 border border-amber-200 rounded-md">
           <AlertCircle size={16} className="text-amber-500 mr-2 shrink-0 mt-0.5" />
           <p className="text-amber-700">
-            For security reasons, use a dedicated email that isn't linked to sensitive accounts. Passwords are encrypted during transmission and storage.
+            For security reasons, use a dedicated email that isn't linked to sensitive accounts. Passwords are encrypted
+            during transmission and storage.
           </p>
         </div>
       </div>
     </div>
   );
 }
-
-
-
-
-
-

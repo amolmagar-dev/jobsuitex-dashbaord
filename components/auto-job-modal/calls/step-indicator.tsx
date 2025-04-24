@@ -1,6 +1,6 @@
 // components/auto-job-modal/StepIndicator.tsx
-import React from 'react';
-import { Check } from 'lucide-react';
+import React from "react";
+import { Check } from "lucide-react";
 
 interface StepIndicatorProps {
   steps: Array<{
@@ -18,26 +18,36 @@ export function StepIndicator({ steps, currentStep, goToStep }: StepIndicatorPro
       <div className="w-full flex items-center">
         {steps.map((step) => (
           <React.Fragment key={step.id}>
-            <div 
-              className={`flex flex-col items-center ${step.id <= currentStep ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+            <div
+              className={`flex flex-col items-center ${
+                step.id <= currentStep ? "cursor-pointer" : "cursor-not-allowed"
+              }`}
               onClick={() => goToStep(step.id)}
             >
-              <div 
+              <div
                 className={`rounded-full flex items-center justify-center w-8 h-8 text-sm font-medium
-                  ${step.id < currentStep ? 'bg-primary text-primary-foreground' : 
-                    step.id === currentStep ? 'bg-primary text-primary-foreground' : 
-                    'bg-muted text-muted-foreground'}`}
+                  ${
+                    step.id < currentStep
+                      ? "bg-primary text-primary-foreground"
+                      : step.id === currentStep
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground"
+                  }`}
               >
                 {step.id < currentStep ? <Check size={16} /> : step.id}
               </div>
-              <span className={`text-xs mt-1 text-center ${step.id === currentStep ? 'font-medium' : 'text-muted-foreground'}`}>
+              <span
+                className={`text-xs mt-1 text-center ${
+                  step.id === currentStep ? "font-medium" : "text-muted-foreground"
+                }`}
+              >
                 {step.title}
               </span>
             </div>
             {step.id !== steps.length && (
-              <div 
+              <div
                 className={`flex-1 h-px mx-1 
-                  ${step.id < currentStep ? 'bg-primary' : 'bg-muted'}`}
+                  ${step.id < currentStep ? "bg-primary" : "bg-muted"}`}
               />
             )}
           </React.Fragment>
