@@ -8,9 +8,6 @@ export function TabNavigation() {
   
   const tabs = [
     { name: "Overview", path: "/" },
-    { name: "Analytics", path: "/analytics" },
-    { name: "Reports", path: "/reports" },
-    { name: "Notifications", path: "/notifications" },   
     { name: "Services", path: "/services" }
   ]
   
