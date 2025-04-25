@@ -1,86 +1,223 @@
 "use client"
 
 import * as React from "react"
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import { LoaderIcon, AlertCircleIcon } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import jobApplicationService from "@/services/jobApplicationService"
 
-const chartData = [
-  { date: "2024-01-01", applications: 5, interviews: 0, offers: 0 },
-  { date: "2024-01-08", applications: 8, interviews: 2, offers: 0 },
-  { date: "2024-01-15", applications: 12, interviews: 3, offers: 1 },
-  { date: "2024-01-22", applications: 7, interviews: 4, offers: 0 },
-  { date: "2024-01-29", applications: 10, interviews: 2, offers: 0 },
-  { date: "2024-02-05", applications: 15, interviews: 5, offers: 1 },
-  { date: "2024-02-12", applications: 9, interviews: 3, offers: 0 },
-  { date: "2024-02-19", applications: 11, interviews: 4, offers: 1 },
-  { date: "2024-02-26", applications: 14, interviews: 6, offers: 2 },
-  { date: "2024-03-04", applications: 8, interviews: 3, offers: 0 },
-  { date: "2024-03-11", applications: 12, interviews: 5, offers: 1 },
-  { date: "2024-03-18", applications: 16, interviews: 7, offers: 2 },
-  { date: "2024-03-25", applications: 10, interviews: 4, offers: 1 },
-  { date: "2024-04-01", applications: 13, interviews: 6, offers: 1 },
-  { date: "2024-04-08", applications: 18, interviews: 8, offers: 2 },
-  { date: "2024-04-15", applications: 14, interviews: 5, offers: 1 },
-  { date: "2024-04-22", applications: 11, interviews: 4, offers: 0 },
-]
+// Custom tooltip component for showing portal breakdown
+const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: any[]; label?: string }) => {
+  if (active && payload && payload.length) {
+    // Convert date string to readable format
+    if (!label) return null;
+    const dateObj = new Date(label);
+    const formattedDate = dateObj.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+    
+    // Get portal data
+    const portals = payload[0]?.payload?.portals || {};
+    const portalEntries = Object.entries(portals);
+    
+    return (
+      <div className="rounded-lg border bg-card p-3 shadow-sm">
+        <h5 className="mb-2 font-medium">{formattedDate}</h5>
+        <p className="mb-2 text-lg font-semibold">
+          Total: {payload[0].value} Applications
+        </p>
+        {portalEntries.length > 0 ? (
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground">Application sources:</p>
+            {portalEntries.map(([portal, count]) => (
+              <div key={portal} className="flex items-center justify-between gap-2">
+                <span className="text-sm">{portal}:</span>
+                <span className="font-medium">{count as number}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No portal data available</p>
+        )}
+      </div>
+    );
+  }
 
-const chartConfig = {
-  applications: {
-    label: "Applications",
-    color: "hsl(var(--chart-1))",
-  },
-  interviews: {
-    label: "Interviews",
-    color: "hsl(var(--chart-2))",
-  },
-  offers: {
-    label: "Offers",
-    color: "hsl(var(--chart-3))",
-  },
-} satisfies ChartConfig
+  return null;
+};
 
 export function ChartAreaInteractive() {
   const isMobile = useIsMobile()
   const [timeRange, setTimeRange] = React.useState("90d")
+  const [chartData, setChartData] = React.useState([])
+  const [loading, setLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
 
+  // Effect to handle mobile view
   React.useEffect(() => {
     if (isMobile) {
       setTimeRange("30d")
     }
   }, [isMobile])
 
-  const filteredData = chartData.filter((item) => {
-    const date = new Date(item.date)
-    const referenceDate = new Date("2024-04-22")
-    let daysToSubtract = 90
-    if (timeRange === "30d") {
-      daysToSubtract = 30
-    } else if (timeRange === "7d") {
-      daysToSubtract = 7
+  // Effect to fetch data when time range changes
+  React.useEffect(() => {
+    const fetchChartData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        const response = await jobApplicationService.jobApplications.getActivityTimeline(timeRange)
+        
+        if (response.data && response.data.success) {
+          // Format dates for display
+          interface TimelineItem {
+            date: string;
+            count: number;
+            portals: Record<string, number>;
+          }
+          
+          const formattedData = response.data.timeline.map((item: TimelineItem) => {
+            const date = new Date(item.date);
+            return {
+              ...item,
+              dateFormatted: date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric'
+              })
+            }
+          });
+          
+          setChartData(formattedData);
+        } else {
+          throw new Error(response.data?.message || 'Failed to fetch timeline data');
+        }
+      } catch (err: unknown) {
+        console.error('Error fetching timeline data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load chart data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchChartData();
+  }, [timeRange]);
+
+  interface TimeRangeValue {
+    value: '90d' | '30d' | '7d';
+  }
+
+  const handleTimeRangeChange = (value: TimeRangeValue['value']): void => {
+    if (value) {
+      setTimeRange(value);
     }
-    const startDate = new Date(referenceDate)
-    startDate.setDate(startDate.getDate() - daysToSubtract)
-    return date >= startDate
-  })
+  };
+
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="flex h-[250px] w-full items-center justify-center">
+          <LoaderIcon className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <Alert variant="destructive" className="m-4">
+          <AlertCircleIcon className="h-4 w-4" />
+          <AlertDescription>Error loading data: {error}</AlertDescription>
+        </Alert>
+      );
+    }
+
+    if (chartData.length === 0) {
+      return (
+        <div className="flex h-[250px] w-full items-center justify-center text-muted-foreground">
+          No application data available for the selected time period
+        </div>
+      );
+    }
+
+    // For cleaner visualization, if we have many data points, use bar chart for mobile
+    // and area chart for desktop
+    const ChartComponent = (timeRange === '90d' && isMobile) ? BarChart : AreaChart;
+    
+    return (
+      <ResponsiveContainer width="100%" height={250}>
+        <ChartComponent data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+          <defs>
+            <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8} />
+              <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.3} />
+          <XAxis 
+            dataKey="date" 
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            minTickGap={isMobile ? 15 : 30}
+            tickFormatter={(value) => {
+              const date = new Date(value);
+              return date.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              });
+            }}
+          />
+          <YAxis 
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            domain={[0, 'dataMax + 1']}
+            allowDecimals={false}
+          />
+          <Tooltip content={<CustomTooltip />} />
+          {ChartComponent === AreaChart ? (
+            <Area 
+              type="monotone" 
+              dataKey="count" 
+              name="Applications" 
+              stroke="hsl(var(--chart-1))" 
+              fillOpacity={1} 
+              fill="url(#colorCount)" 
+            />
+          ) : (
+            <Bar 
+              dataKey="count" 
+              name="Applications" 
+              fill="hsl(var(--chart-1))" 
+              radius={[4, 4, 0, 0]} 
+            />
+          )}
+        </ChartComponent>
+      </ResponsiveContainer>
+    );
+  };
 
   return (
     <Card className="@container/card">
       <CardHeader className="relative">
         <CardTitle>Job Application Activity</CardTitle>
         <CardDescription>
-          <span className="@[540px]/card:block hidden">Track your applications, interviews, and offers over time</span>
+          <span className="@[540px]/card:block hidden">Track your daily job application submissions</span>
           <span className="@[540px]/card:hidden">Application activity</span>
         </CardDescription>
         <div className="absolute right-4 top-4">
           <ToggleGroup
             type="single"
             value={timeRange}
-            onValueChange={setTimeRange}
+            onValueChange={handleTimeRangeChange}
             variant="outline"
             className="@[767px]/card:flex hidden"
           >
@@ -94,8 +231,8 @@ export function ChartAreaInteractive() {
               Last 7 days
             </ToggleGroupItem>
           </ToggleGroup>
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="@[767px]/card:hidden flex w-40" aria-label="Select a value">
+          <Select value={timeRange} onValueChange={handleTimeRangeChange}>
+            <SelectTrigger className="@[767px]/card:hidden flex w-40" aria-label="Select a time range">
               <SelectValue placeholder="Last 3 months" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
@@ -113,62 +250,8 @@ export function ChartAreaInteractive() {
         </div>
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-        <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
-          <AreaChart data={filteredData}>
-            <defs>
-              <linearGradient id="fillApplications" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--color-applications)" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="var(--color-applications)" stopOpacity={0.1} />
-              </linearGradient>
-              <linearGradient id="fillInterviews" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--color-interviews)" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="var(--color-interviews)" stopOpacity={0.1} />
-              </linearGradient>
-              <linearGradient id="fillOffers" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--color-offers)" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="var(--color-offers)" stopOpacity={0.1} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="date"
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              minTickGap={32}
-              tickFormatter={(value) => {
-                const date = new Date(value)
-                return date.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                })
-              }}
-            />
-            <ChartTooltip
-              cursor={false}
-              content={
-                <ChartTooltipContent
-                  labelFormatter={(value) => {
-                    return new Date(value).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                    })
-                  }}
-                  indicator="dot"
-                />
-              }
-            />
-            <Area
-              dataKey="applications"
-              type="monotone"
-              fill="url(#fillApplications)"
-              stroke="var(--color-applications)"
-            />
-            <Area dataKey="interviews" type="monotone" fill="url(#fillInterviews)" stroke="var(--color-interviews)" />
-            <Area dataKey="offers" type="monotone" fill="url(#fillOffers)" stroke="var(--color-offers)" />
-          </AreaChart>
-        </ChartContainer>
+        {renderContent()}
       </CardContent>
     </Card>
-  )
+  );
 }

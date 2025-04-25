@@ -17,6 +17,17 @@ const jobApplications = {
     return api.get('/job-applications', { params: queryParams });
   },
 
+  // Get dashboard statistics for cards
+  getDashboardStatistics: () => {
+    return api.get('/job-applications/dashboard-statistics');
+  },
+  
+  // Get application activity timeline for chart
+  getActivityTimeline: (timeRange = '90d') => {
+    return api.get('/job-applications/activity-timeline', { 
+      params: { timeRange } 
+    });
+  }
 };
 
 // Export the API utilities
