@@ -17,16 +17,6 @@ const jobApplications = {
     return api.get('/job-applications', { params: queryParams });
   },
 
-  // Update job application status
-  updateStatus: (id, status, notes) => {
-    return api.patch(`/job-applications/${id}/status`, { status, notes });
-  },
-
-  // Get job application statistics
-  getStatistics: () => {
-    return api.get('/job-applications/stats');
-  },
-
 };
 
 // Export the API utilities
