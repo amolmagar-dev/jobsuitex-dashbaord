@@ -12,6 +12,7 @@ import { NaukriJobAutomation } from '../services/NaukriJobAutomationService.js';
 class JobRunner {
     // Private instance variable
     static #instance = null;
+    static #isInitialized = false;
     
     /**
      * Get the singleton instance of JobRunner
@@ -54,8 +55,15 @@ class JobRunner {
 
     /**
      * Initialize the job runner
+     * Only allows initialization once
      */
     async initialize() {
+        // If already initialized, don't initialize again
+        if (JobRunner.#isInitialized) {
+            this.app.log.info('Job Runner already initialized, skipping re-initialization');
+            return;
+        }
+
         try {
             this.app.log.info('Initializing Job Runner service...');
 
@@ -67,6 +75,8 @@ class JobRunner {
             // Load all active jobs on startup
             await this.loadActiveJobs();
 
+            // Mark as initialized
+            JobRunner.#isInitialized = true;
             this.app.log.info('Job Runner service initialized successfully');
         } catch (error) {
             this.app.log.error({ err: error }, 'Failed to initialize Job Runner');
@@ -85,9 +95,19 @@ class JobRunner {
 
             this.app.log.info(`Found ${activeJobs.length} active jobs`);
 
-            // Schedule each active job
+            // Schedule each active job without immediately executing them
             for (const job of activeJobs) {
+                // Only schedule, don't queue for immediate execution
                 this.scheduleJob(job);
+                
+                // Check if the job is already past its scheduled time
+                const now = new Date();
+                if (job.schedule && job.schedule.nextRun && new Date(job.schedule.nextRun) <= now) {
+                    this.app.log.info(`Job ${job._id} is past its scheduled run time, updating nextRun without executing`);
+                    
+                    // Update the nextRun time to the future without executing now
+                    await JobConfigModel.updateNextRunTime(this.app, job._id.toString());
+                }
             }
         } catch (error) {
             this.app.log.error({ err: error }, 'Error loading active jobs');
@@ -131,12 +151,22 @@ class JobRunner {
      */
     calculateCronExpression(schedule) {
         try {
-            const { frequency, days, time } = schedule;
+            const { frequency, days, time, hourlyInterval } = schedule;
 
             // Extract hours and minutes from time (format: HH:mm)
             const [hours, minutes] = (time || '00:00').split(':').map(Number);
 
             switch (frequency) {
+                case 'hourly':
+                    // For hourly, run every N hours (where N is hourlyInterval)
+                    // If hourlyInterval is 1, run every hour
+                    // If hourlyInterval is 2, run every 2 hours, etc.
+                    const interval = hourlyInterval || 1;
+                    if (interval <= 0) return null;
+                    
+                    // Pattern: minutes, every N hours, every day, every month, any day of week
+                    return `${minutes} */${interval} * * *`;
+                    
                 case 'daily':
                     return `${minutes} ${hours} * * *`;
 
@@ -176,7 +206,8 @@ class JobRunner {
         this.isRunning = true;
 
         try {
-            // Find jobs due for execution
+            // Find jobs due for execution (jobs where nextRun is in the past)
+            const now = new Date();
             const jobsToRun = await JobConfigModel.findDueForExecution(this.app);
 
             if (jobsToRun.length > 0) {
@@ -184,7 +215,11 @@ class JobRunner {
 
                 // Add each job to the queue
                 for (const job of jobsToRun) {
+                    // Add job to queue
                     this.addToQueue(job._id.toString());
+                    
+                    // Update the next run time for this job
+                    await JobConfigModel.updateNextRunTime(this.app, job._id.toString());
                 }
             }
         } catch (error) {
@@ -426,6 +461,9 @@ class JobRunner {
         this.scheduledJobs.clear();
         this.jobQueue = [];
         this.isProcessingQueue = false;
+        
+        // Reset initialization flag to allow reinitializing if needed
+        JobRunner.#isInitialized = false;
 
         this.app.log.info('Job Runner service stopped');
     }
