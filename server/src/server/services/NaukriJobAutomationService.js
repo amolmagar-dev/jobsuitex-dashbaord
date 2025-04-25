@@ -15,7 +15,7 @@ export class NaukriJobAutomation {
             email: credentials.username || process.env.NAUKRI_USERNAME,
             password: credentials.password || process.env.NAUKRI_PASSWORD
         };
-        this.maxPagesToScrape = parseInt(process.env.SCRAPE_PAGES || "5");
+        this.maxPagesToScrape = parseInt(10);
         this.sortBy = process.env.JOB_SHORT_BY || "Date";
     }
 
