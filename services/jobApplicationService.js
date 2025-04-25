@@ -2,63 +2,34 @@ import api from "./service";
 
 // API functions for job applications
 const jobApplications = {
-    // Get all job applications with pagination and filtering
-    getAll: (params = {}) => {
-      const queryParams = {
-          page: params.page || 1,
-          limit: params.limit || 10,
-          ...(params.status && { status: params.status }),
-          ...(params.company && { company: params.company }),
-          ...(params.portal && { portal: params.portal }),
-          sortBy: params.sortBy || 'appliedOn',
-          sortOrder: params.sortOrder || 'desc'
-      };
-      
-      return api.get('/job-applications', { params: queryParams });
+  // Get all job applications with pagination and filtering
+  getAll: (params = {}) => {
+    const queryParams = {
+      page: params.page || 1,
+      limit: params.limit || 10,
+      ...(params.status && { status: params.status }),
+      ...(params.company && { company: params.company }),
+      ...(params.portal && { portal: params.portal }),
+      sortBy: params.sortBy || 'appliedOn',
+      sortOrder: params.sortOrder || 'desc'
+    };
+
+    return api.get('/job-applications', { params: queryParams });
   },
 
-    // Get a specific job application
-    getById: (id) => {
-        return api.get(`/job-applications/${id}`);
-    },
+  // Update job application status
+  updateStatus: (id, status, notes) => {
+    return api.patch(`/job-applications/${id}/status`, { status, notes });
+  },
 
-    // Create a new job application
-    create: (applicationData) => {
-        return api.post('/job-applications', applicationData);
-    },
+  // Get job application statistics
+  getStatistics: () => {
+    return api.get('/job-applications/stats');
+  },
 
-    // Update a job application
-    update: (id, updateData) => {
-        return api.put(`/job-applications/${id}`, updateData);
-    },
-
-    // Update job application status
-    updateStatus: (id, status, notes) => {
-        return api.patch(`/job-applications/${id}/status`, { status, notes });
-    },
-
-    // Delete a job application
-    delete: (id) => {
-        return api.delete(`/job-applications/${id}`);
-    },
-
-    // Get job application statistics
-    getStatistics: () => {
-        return api.get('/job-applications/stats');
-    },
-
-    // Get job application history
-    getHistory: (id) => {
-        return api.get(`/job-applications/${id}/history`);
-    },
-
-    // Bulk update job applications
-    bulkUpdate: (applicationIds, status, notes) => {
-        return api.post('/job-applications/bulk-update', { applicationIds, status, notes });
-    }
 };
 
 // Export the API utilities
 export default {
-    jobApplications
+  jobApplications
 };
