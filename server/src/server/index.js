@@ -42,7 +42,7 @@ let io;
 
 // Register cors
 await fastify.register(fastifyCors, {
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE' , 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     exposedHeaders: ['Content-Range', 'X-Content-Range'],
     origin: true // Allow all origins for now
@@ -62,7 +62,7 @@ fastify.register(userModelPlugin);
 fastify.register(jobConfigPlugin);
 fastify.register(portalCredentialPlugin);
 fastify.register(jobApplicationModelPlugin);
-// await fastify.register(jobRunnerPlugin, {});
+await fastify.register(jobRunnerPlugin, {});
 
 
 

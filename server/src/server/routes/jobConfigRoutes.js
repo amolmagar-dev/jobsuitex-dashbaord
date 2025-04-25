@@ -54,12 +54,25 @@ export default async function jobConfigRoutes(fastify, options) {
 
             // Create or update job config
             const result = await fastify.jobConfigModel.createOrUpdate(userId, configData);
+            
+            // Get the job ID (either the upserted ID or the existing ID)
+            const jobId = result.upsertedId || (configData.id ? configData.id : null);
+            
+            if (jobId) {
+                // Notify the job runner to update the job schedule
+                if (configData.isActive) {
+                    await fastify.jobRunner.updateJob(jobId.toString());
+                } else {
+                    // If job is not active, remove it from the scheduler
+                    fastify.jobRunner.removeJob(jobId.toString());
+                }
+            }
 
             return {
                 success: true,
                 message: 'Job configuration saved successfully',
                 config: {
-                    id: result.upsertedId || configData.id,
+                    id: jobId,
                     ...configData
                 }
             };
@@ -95,6 +108,11 @@ export default async function jobConfigRoutes(fastify, options) {
                     }
                 });
                 configId = result.insertedId;
+                
+                // Schedule the new job if it's active
+                if (configId) {
+                    await fastify.jobRunner.updateJob(configId.toString());
+                }
             } else {
                 configId = config._id;
             }
@@ -158,39 +176,68 @@ export default async function jobConfigRoutes(fastify, options) {
         }
     });
 
-    // Toggle job config active status
-    fastify.patch('/job-config/toggle', { onRequest: [fastify.authenticate] }, async (request, reply) => {
-        try {
-            const userId = request.user.id;
+   // Toggle job config active status
+fastify.patch('/job-config/toggle', { onRequest: [fastify.authenticate] }, async (request, reply) => {
+  try {
+      const userId = request.user.id;
 
-            // Get existing config
-            const config = await fastify.jobConfigModel.findByUser(userId);
+      // Get existing config
+      const config = await fastify.jobConfigModel.findByUser(userId);
 
-            if (!config) {
-                return reply.code(404).send({
-                    error: 'Not Found',
-                    message: 'Job configuration not found'
-                });
-            }
+      if (!config) {
+          return reply.code(404).send({
+              error: 'Not Found',
+              message: 'Job configuration not found'
+          });
+      }
 
-            // Toggle the active status
-            await fastify.jobConfigModel.update(config._id, userId, {
-                isActive: !config.isActive
-            });
+      // Get the job ID as string
+      const jobId = config._id.toString();
+      
+      // Toggle the active status
+      const newActiveStatus = !config.isActive;
+      
+      // Update database first
+      await fastify.jobConfigModel.update(config._id, userId, {
+          isActive: newActiveStatus
+      });
+      
+      // Log what we're about to do
+      fastify.log.info(`Job ${jobId} toggled to ${newActiveStatus ? 'active' : 'inactive'}`);
+      
+      // Update job runner based on new status
+      if (fastify.jobRunner) {
+          try {
+              if (newActiveStatus) {
+                  // If activating, add the job to the scheduler
+                  fastify.log.info(`Adding job ${jobId} to scheduler`);
+                  await fastify.jobRunner.addJob(jobId);
+              } else {
+                  // If deactivating, remove the job from the scheduler
+                  fastify.log.info(`Removing job ${jobId} from scheduler`);
+                  fastify.jobRunner.removeJob(jobId);
+              }
+          } catch (runnerError) {
+              // Log but don't fail the entire operation
+              fastify.log.error({ err: runnerError }, `Job runner error while toggling job ${jobId}`);
+          }
+      } else {
+          fastify.log.warn(`JobRunner not available, can't update scheduler for job ${jobId}`);
+      }
 
-            return {
-                success: true,
-                message: `Job configuration ${!config.isActive ? 'activated' : 'deactivated'} successfully`,
-                isActive: !config.isActive
-            };
-        } catch (error) {
-            logger.error(`Error toggling job config: ${error.message}`);
-            return reply.code(500).send({
-                error: 'Server Error',
-                message: error.message
-            });
-        }
-    });
+      return {
+          success: true,
+          message: `Job configuration ${newActiveStatus ? 'activated' : 'deactivated'} successfully`,
+          isActive: newActiveStatus
+      };
+  } catch (error) {
+      fastify.log.error({ err: error }, 'Error toggling job config');
+      return reply.code(500).send({
+          error: 'Server Error',
+          message: error.message
+      });
+  }
+});
 
     // Update schedule
     fastify.put('/job-config/schedule', { onRequest: [fastify.authenticate] }, async (request, reply) => {
@@ -210,6 +257,11 @@ export default async function jobConfigRoutes(fastify, options) {
 
             // Update schedule
             await fastify.jobConfigModel.update(config._id, userId, scheduleData);
+            
+            // Update the job runner with the new schedule if the config is active
+            if (config.isActive) {
+                await fastify.jobRunner.updateJob(config._id.toString());
+            }
 
             return {
                 success: true,
@@ -334,27 +386,41 @@ export default async function jobConfigRoutes(fastify, options) {
                 });
             }
 
-            // Here you would trigger the job to run immediately
-            // This would connect to your job scheduler or queue
-            
-            let message = 'Job execution triggered successfully';
+            if (!config.isActive) {
+                return reply.code(400).send({
+                    error: 'Inactive Configuration',
+                    message: 'Job configuration is inactive. Please activate it first.'
+                });
+            }
+
+            // Check if portal exists in config if specified
             if (portalType) {
-                // Check if portal exists in config
-                const portalExists = config.portals.some(p => p.type === portalType);
+                const portalExists = config.portals.some(p => p.type === portalType && p.isActive);
                 if (!portalExists) {
                     return reply.code(400).send({
                         error: 'Invalid Portal',
-                        message: `Portal ${portalType} is not configured`
+                        message: `Portal ${portalType} is not configured or inactive`
                     });
                 }
-                message = `Job execution for ${portalType} triggered successfully`;
+            }
+
+            // Trigger immediate execution using jobRunner
+            const result = await fastify.jobRunner.runJobNow(config._id.toString());
+            
+            if (!result.success) {
+                return reply.code(500).send({
+                    error: 'Execution Error',
+                    message: result.message
+                });
             }
 
             logger.info(`Manual execution triggered for job config ${config._id} ${portalType ? `(portal: ${portalType})` : ''}`);
 
             return {
                 success: true,
-                message,
+                message: portalType 
+                    ? `Job execution for ${portalType} triggered successfully`
+                    : 'Job execution triggered successfully',
                 scheduledTime: new Date()
             };
         } catch (error) {
@@ -424,4 +490,4 @@ export default async function jobConfigRoutes(fastify, options) {
             });
         }
     });
-  }
+}
