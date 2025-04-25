@@ -18,6 +18,11 @@ export function useJobConfig(isOpen: boolean) {
   const [password, setPassword] = useState("");
   const [credentialsSaved, setCredentialsSaved] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  // New verification state
+  const [isVerified, setIsVerified] = useState(false);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [lastVerifiedUsername, setLastVerifiedUsername] = useState("");
+  const [lastVerifiedPassword, setLastVerifiedPassword] = useState("");
 
   // Step 2: Search Criteria state
   const [jobKeywords, setJobKeywords] = useState("");
@@ -66,6 +71,14 @@ export function useJobConfig(isOpen: boolean) {
       loadPortalConfig(selectedPortal);
     }
   }, [selectedPortal, isOpen, jobConfig]);
+
+  // Reset verification when credentials change
+  useEffect(() => {
+    if (username !== lastVerifiedUsername || password !== lastVerifiedPassword) {
+      setIsVerified(false);
+      setVerificationError(null);
+    }
+  }, [username, password, lastVerifiedUsername, lastVerifiedPassword]);
 
   // API Functions =================================================
 
@@ -166,9 +179,14 @@ export function useJobConfig(isOpen: boolean) {
       if (response && response.success && response.credential) {
         setUsername(response.credential.username || "");
         setCredentialsSaved(true);
+        // If credentials were previously saved, we'll consider them verified
+        setIsVerified(true);
+        setLastVerifiedUsername(response.credential.username || "");
+        // Don't set lastVerifiedPassword as we don't have it
       } else {
         setUsername("");
         setCredentialsSaved(false);
+        setIsVerified(false);
       }
 
       // Always clear password for security
@@ -176,6 +194,7 @@ export function useJobConfig(isOpen: boolean) {
     } catch (error) {
       console.error("Error fetching credentials:", error);
       setCredentialsSaved(false);
+      setIsVerified(false);
     }
   };
 
@@ -185,6 +204,12 @@ export function useJobConfig(isOpen: boolean) {
 
       if (!username) {
         toast.error("Username is required");
+        return;
+      }
+
+      // Only allow saving if verification was successful or credentials were previously saved
+      if (!isVerified && !credentialsSaved) {
+        toast.error("Please verify your connection before saving credentials");
         return;
       }
 
@@ -223,7 +248,14 @@ export function useJobConfig(isOpen: boolean) {
 
       // Check if we have credentials to verify
       if (!username) {
+        setVerificationError("Username is required");
         toast.error("Username is required");
+        return;
+      }
+
+      if (!password && !credentialsSaved) {
+        setVerificationError("Password is required");
+        toast.error("Password is required");
         return;
       }
 
@@ -235,12 +267,20 @@ export function useJobConfig(isOpen: boolean) {
       const response = await portalCredentialService.verifyCredentials(selectedPortal, credentials);
 
       if (response && response.success) {
-        toast.success("Credentials verified successfully");
+        setIsVerified(true);
+        setVerificationError(null);
+        setLastVerifiedUsername(username);
+        setLastVerifiedPassword(password);
+        toast.success("Connection verified successfully");
       } else {
+        setIsVerified(false);
+        setVerificationError(response?.message || "Failed to verify credentials");
         toast.error(response?.message || "Failed to verify credentials");
       }
     } catch (error) {
       console.error("Error verifying credentials:", error);
+      setIsVerified(false);
+      setVerificationError("Failed to verify connection");
       toast.error("Failed to verify connection");
     } finally {
       setLoading(false);
@@ -465,9 +505,11 @@ export function useJobConfig(isOpen: boolean) {
         let isValid = true;
         
         // Validate step 1: Portal credentials
-        if (currentStep === 1 && !credentialsSaved) {
-          toast.error("Please save your credentials before proceeding");
-          isValid = false;
+        if (currentStep === 1) {
+          if (!credentialsSaved && !isVerified) {
+            toast.error("Please verify and save your credentials before proceeding");
+            isValid = false;
+          }
         }
         
         // Validate and save step 2: Search criteria
@@ -581,6 +623,8 @@ export function useJobConfig(isOpen: boolean) {
     portalData,
     saveCredentials,
     verifyConnection,
+    isVerified,
+    verificationError,
 
     // Step 2: Search Criteria
     jobKeywords,

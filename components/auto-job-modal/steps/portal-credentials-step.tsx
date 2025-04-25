@@ -1,9 +1,9 @@
-// components/auto-job-modal/steps/PortalCredentialsStep.tsx
-import React from "react";
+// components/auto-job-modal/steps/portal-credentials-step.tsx
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, Lock, EyeOff, Eye, Save, RotateCw, CheckCircle, AlertCircle } from "lucide-react";
+import { User, Lock, EyeOff, Eye, Save, RotateCw, CheckCircle, AlertCircle, XCircle } from "lucide-react";
 
 interface PortalCredentialsStepProps {
   state: {
@@ -20,6 +20,8 @@ interface PortalCredentialsStepProps {
     loading: boolean;
     saveCredentials: () => Promise<void>;
     verifyConnection: () => Promise<void>;
+    isVerified: boolean; // New prop for verification status
+    verificationError: string | null; // For displaying error messages
   };
 }
 
@@ -38,7 +40,62 @@ export default function PortalCredentialsStep({ state }: PortalCredentialsStepPr
     loading,
     saveCredentials,
     verifyConnection,
+    isVerified,
+    verificationError
   } = state;
+
+  // Local state to track if the password field has been changed
+  const [passwordChanged, setPasswordChanged] = useState(false);
+
+  // Reset passwordChanged when the component rerenders with new credentials
+  useEffect(() => {
+    setPasswordChanged(false);
+  }, [selectedPortal, credentialsSaved]);
+
+  // Watch for password changes
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    
+    // Only mark as changed if there's actually content
+    if (newPassword.trim().length > 0) {
+      setPasswordChanged(true);
+    } else {
+      setPasswordChanged(false);
+    }
+  };
+
+  // Combined function for verify and save
+  const handleVerifyAndSave = async () => {
+    // First verify
+    if (!isVerified || (credentialsSaved && passwordChanged)) {
+      await verifyConnection();
+      // If verification succeeded, then save automatically
+      if (isVerified) {
+        await saveCredentials();
+      }
+    } else {
+      // If already verified, just save
+      await saveCredentials();
+    }
+  };
+
+  // Determine what the button should say
+  const getButtonText = () => {
+    if (loading) {
+      return "Processing...";
+    }
+    
+    if (!credentialsSaved) {
+      return "Verify & Save Credentials";
+    }
+    
+    if (passwordChanged) {
+      return "Verify & Update Password";
+    }
+    
+    return "Save Credentials";
+  };
 
   return (
     <div className="space-y-6">
@@ -93,7 +150,7 @@ export default function PortalCredentialsStep({ state }: PortalCredentialsStepPr
               id="password"
               type={showPassword ? "text" : "password"}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handlePasswordChange}
               placeholder={
                 credentialsSaved ? "Enter new password only if you want to change it" : "Enter your Naukri password"
               }
@@ -109,22 +166,47 @@ export default function PortalCredentialsStep({ state }: PortalCredentialsStepPr
               <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
             </Button>
           </div>
-          {credentialsSaved && (
+          {credentialsSaved && !passwordChanged && (
             <div className="text-sm flex items-center text-green-600 mt-1">
               <CheckCircle size={14} className="mr-1" />
               <span>Credentials saved</span>
             </div>
           )}
+          {credentialsSaved && passwordChanged && (
+            <div className="text-sm flex items-center text-amber-600 mt-1">
+              <AlertCircle size={14} className="mr-1" />
+              <span>Password change will require verification</span>
+            </div>
+          )}
         </div>
 
+        {/* Verification Status Messages */}
+        {isVerified && !passwordChanged && (
+          <div className="text-sm flex items-center text-green-600 mt-1">
+            <CheckCircle size={14} className="mr-1" />
+            <span>Credentials verified successfully</span>
+          </div>
+        )}
+
+        {verificationError && (
+          <div className="text-sm flex items-center text-red-600 mt-1">
+            <XCircle size={14} className="mr-1" />
+            <span>{verificationError}</span>
+          </div>
+        )}
+
         <div className="flex flex-wrap gap-3 mt-4">
-          <Button onClick={saveCredentials} disabled={loading}>
-            {loading ? <RotateCw size={16} className="mr-2 animate-spin" /> : <Save size={16} className="mr-2" />}
-            Save Credentials
-          </Button>
-          <Button variant="outline" onClick={verifyConnection} disabled={loading}>
-            <RotateCw size={16} className={`mr-2 ${loading ? "animate-spin" : ""}`} />
-            Verify Connection
+          <Button 
+            onClick={handleVerifyAndSave} 
+            disabled={loading || !username || (!password && !credentialsSaved)}
+            className="w-full"
+          >
+            {loading ? (
+              <RotateCw size={16} className="mr-2 animate-spin" />
+            ) : (
+              <Save size={16} className="mr-2" />
+            )}
+            {getButtonText()}
           </Button>
         </div>
 
