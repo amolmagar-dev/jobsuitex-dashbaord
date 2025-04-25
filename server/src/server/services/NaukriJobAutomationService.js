@@ -96,9 +96,12 @@ export class NaukriJobAutomation {
 
             // Skills match
             const skills = job.skills.map(s => s.toLowerCase());
-            const skillMatch = prefs.requiredSkills.every(skill =>
-                skills.some(s => s.includes(skill.toLowerCase()))
-            );
+            
+
+            const skillMatch = prefs.requiredSkills.some(skill =>
+              skills.some(s => s.includes(skill.toLowerCase()))
+             );
+          
 
             // Rating match
             const ratingMatch = (() => {
@@ -113,8 +116,7 @@ export class NaukriJobAutomation {
                 )
                 : false;
 
-            // return locationMatch && skillMatch && ratingMatch && !companyExcluded;
-            return true
+            return  skillMatch && ratingMatch ;
         });
     }
 
