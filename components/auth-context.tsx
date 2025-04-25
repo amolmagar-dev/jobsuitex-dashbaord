@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if (response.ok) {
             const userData = await response.json();
-            setUser(userData);
+            setUser(userData.user);
             setIsAuthenticated(true);
           } else {
             // Token is invalid, clear it
