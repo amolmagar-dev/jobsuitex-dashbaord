@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { TrendingDownIcon, TrendingUpIcon, BriefcaseIcon, XCircleIcon, ClockIcon, LoaderIcon, CalendarClockIcon } from "lucide-react"
+import { TrendingDownIcon, TrendingUpIcon, BriefcaseIcon, XCircleIcon, LoaderIcon, CalendarClockIcon } from "lucide-react"
 
 interface Statistics {
   totalApplications?: {

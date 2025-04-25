@@ -158,7 +158,7 @@ export default function AutoJobPage() {
           </div>
           <Card className="bg-slate-50/50 border-dashed">
             <CardContent className="p-6 flex flex-col items-center">
-              <p className="text-muted-foreground text-center mb-2">We're working on more AI-powered services to help with your job search</p>
+              <p className="text-muted-foreground text-center mb-2">We are working on more AI-powered services to help with your job search</p>
               <Badge variant="outline" className="bg-slate-100">Stay tuned for updates</Badge>
             </CardContent>
           </Card>

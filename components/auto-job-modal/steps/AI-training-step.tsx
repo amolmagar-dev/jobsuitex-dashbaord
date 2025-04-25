@@ -41,7 +41,7 @@ export function AITrainingStep({ state }: AITrainingStepProps) {
             className="w-full min-h-24 rounded-md border border-input px-3 py-2 text-sm bg-background resize-none"
           />
           <p className="text-sm text-muted-foreground">
-            Write in first person as if you're introducing yourself in an interview
+            Write in first person as if you are introducing yourself in an interview
           </p>
         </div>
 

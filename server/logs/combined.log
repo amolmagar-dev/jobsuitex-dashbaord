@@ -149,3 +149,5 @@
 2025-04-24 15:46:12 [INFO]: Sending resume to Gemini AI for analysis
 2025-04-24 15:46:18 [DEBUG]: Successfully generated instruction from Gemini
 2025-04-24 15:46:18 [INFO]: Successfully generated profile instruction for user: amolmagar.connect@gmail.com
+2025-04-25 21:26:01 [INFO]: Existing user logged in via Google: chat.ppt.gpt@gmail.com
+2025-04-25 21:26:54 [INFO]: Existing user logged in via Google: a.magar@smartshiphub.com

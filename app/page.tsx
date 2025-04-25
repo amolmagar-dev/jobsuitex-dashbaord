@@ -44,7 +44,7 @@ export default function HomePage() {
         <ChartAreaInteractive />
       </div>
       
-      <JobApplicationsTable data={data} />
+      <JobApplicationsTable />
     </DashboardWrapper>
   );
 }

@@ -1,8 +1,7 @@
 // components/auto-job-modal/index.tsx
-import React, { useEffect } from "react";
+import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 
 // Use @ imports for better path management
@@ -28,12 +27,7 @@ export function AutoJobApplicationModal({ open, onOpenChange }: AutoJobApplicati
     currentStep,
     currentPortal,
     loading,
-    credentialsSaved,
-    jobKeywords,
-    jobLocation,
-    setCurrentStep,
     goToStep,
-    setCurrentPortal,
     nextStep,
     prevStep,
     state,
