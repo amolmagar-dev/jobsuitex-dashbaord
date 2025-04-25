@@ -1,18 +1,93 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardWrapper } from "@/components/dashboard-wrapper";
-import {  BellDot, Settings, PowerOff, Sparkles } from "lucide-react";
+import { BellDot, Settings, PowerOff, Sparkles } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { AutoJobApplicationModal } from "@/components/auto-job-modal";
+import { jobConfigService } from "@/services/jobConfigService";
 
 export default function AutoJobPage() {
-  const [isActive, setIsActive] = useState(true);
+  const [isActive, setIsActive] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [statusError, setStatusError] = useState(false);
+
+  // Fetch initial status when component mounts
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        setIsLoading(true);
+        setStatusError(false);
+        
+        // Use the new getStatus method instead of getConfig
+        const statusData = await jobConfigService.getStatus();
+        
+        if (statusData.success) {
+          setIsActive(statusData.isActive);
+        } else {
+          setStatusError(true);
+          toast.error("Could not determine service status");
+        }
+      } catch (error) {
+        console.error("Failed to fetch job status:", error);
+        setStatusError(true);
+        toast.error("Failed to load service status");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStatus();
+  }, []);
+
+  // Handle toggle change
+  interface ToggleResponse {
+    success: boolean;
+    isActive: boolean;
+  }
+
+  const handleToggleChange = async (checked: boolean): Promise<void> => {
+    setIsLoading(true);
+    try {
+      const response: ToggleResponse = await jobConfigService.toggleActive();
+      
+      if (response.success) {
+        setIsActive(response.isActive);
+        toast.success(response.isActive ? "Service activated" : "Service deactivated");
+      } else {
+        toast.error("Failed to update service status");
+        // Don't change UI state if API reported failure
+      }
+    } catch (error: unknown) {
+      console.error("Failed to toggle service:", error);
+      toast.error("Failed to update service status");
+      // Revert the UI state back as the API call failed
+      setIsActive(!checked);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle service activation/deactivation button click
+  const handleServiceToggleButton = async () => {
+    await handleToggleChange(!isActive);
+  };
+
+  // Display a loading state while checking status
+  if (isLoading && statusError === false) {
+    return (
+      <DashboardWrapper>
+        <div className="w-full p-6 flex flex-col items-center justify-center min-h-[300px]">
+          <p className="text-muted-foreground">Loading service status...</p>
+        </div>
+      </DashboardWrapper>
+    );
+  }
 
   return (
     <DashboardWrapper>
@@ -36,7 +111,8 @@ export default function AutoJobPage() {
                     <span className="text-sm text-muted-foreground">{isActive ? "Active" : "Inactive"}</span>
                     <Switch 
                       checked={isActive} 
-                      onCheckedChange={setIsActive} 
+                      onCheckedChange={handleToggleChange} 
+                      disabled={isLoading}
                       aria-label="Toggle service activation"
                     />
                   </div>
@@ -55,7 +131,12 @@ export default function AutoJobPage() {
             </div>
           </CardContent>
           <CardFooter className="pb-6 flex justify-end gap-3">
-            <Button variant="outline" className="flex gap-2 items-center">
+            <Button 
+              variant="outline" 
+              className="flex gap-2 items-center"
+              onClick={handleServiceToggleButton}
+              disabled={isLoading}
+            >
               <PowerOff className="h-4 w-4" />
               {isActive ? "Deactivate Service" : "Activate Service"}
             </Button>

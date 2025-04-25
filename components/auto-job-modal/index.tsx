@@ -79,31 +79,6 @@ export function AutoJobApplicationModal({ open, onOpenChange }: AutoJobApplicati
         </DialogHeader>
 
         {/* Portal selector - visible in step 1 */}
-        {currentStep === 1 && (
-          <div className="mb-4 p-3 border rounded-md bg-muted/10">
-            <div className="portal-selector flex flex-wrap gap-2">
-              {state.portalData.map((portal) => (
-                <div
-                  key={portal.id}
-                  className={`flex items-center p-2 border rounded-lg cursor-pointer
-                    ${state.selectedPortal === portal.name.toLowerCase() ? "border-primary bg-primary/5" : ""}
-                    ${!portal.available ? "opacity-50 cursor-not-allowed" : "hover:border-primary/50"}`}
-                  onClick={() => {
-                    if (portal.available) {
-                      state.setSelectedPortal(portal.name.toLowerCase());
-                      setCurrentPortal(portal.name.toLowerCase());
-                    }
-                  }}
-                >
-                  <div className="portal-letter bg-primary/10 text-primary font-semibold w-8 h-8 rounded-full flex items-center justify-center mr-2">
-                    {portal.id}
-                  </div>
-                  <span className="font-medium">{portal.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Step Indicator */}
         <StepIndicator steps={steps} currentStep={currentStep} goToStep={goToStep} />

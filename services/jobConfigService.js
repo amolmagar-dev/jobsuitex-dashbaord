@@ -12,6 +12,16 @@ const jobConfigService = {
     }
   },
   
+  // Get just the status of the job configuration
+  getStatus: async () => {
+    try {
+      const response = await api.get('/job-config/status');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+  
   // Create or update the job configuration
   saveConfig: async (configData) => {
     try {
