@@ -9,7 +9,7 @@ import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 import { SectionCards } from "@/components/section-cards"
 import { DashboardWrapper } from "@/components/dashboard-wrapper"
 import data from "./dashboard/data.json"
-import { ApplicationsTable } from "@/components/applications-table"
+import { JobApplicationsTable } from "@/components/applications-table"
 
 export default function HomePage() {
   const { isAuthenticated, loading } = useAuth();
@@ -44,7 +44,7 @@ export default function HomePage() {
         <ChartAreaInteractive />
       </div>
       
-      <ApplicationsTable data={data} />
+      <JobApplicationsTable data={data} />
     </DashboardWrapper>
   );
 }

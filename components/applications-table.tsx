@@ -2,29 +2,12 @@
 
 import * as React from "react"
 import {
-  DndContext,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type UniqueIdentifier,
-} from "@dnd-kit/core"
-import { restrictToVerticalAxis } from "@dnd-kit/modifiers"
-import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
-import {
   type ColumnDef,
   type ColumnFiltersState,
-  type Row,
   type SortingState,
   type VisibilityState,
   flexRender,
   getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
@@ -37,16 +20,16 @@ import {
   ChevronsLeftIcon,
   ChevronsRightIcon,
   ColumnsIcon,
-  GripVerticalIcon,
   MoreVerticalIcon,
-  PlusIcon,
-  XCircleIcon,
   ClockIcon,
   PhoneIcon,
   ThumbsUpIcon,
   AlertCircleIcon,
+  XCircleIcon,
+  FilterIcon,
+  CheckIcon,
+  ExternalLinkIcon,
 } from "lucide-react"
-import { z } from "zod"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -58,42 +41,42 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useState, useEffect } from "react"
+import jobApplicationService from "@/services/jobApplicationService"
 
-export const schema = z.object({
-  id: z.number(),
-  company: z.string(),
-  position: z.string(),
-  status: z.string(),
-  appliedDate: z.string(),
-  responseDate: z.string().nullable(),
-  source: z.string(),
-  salary: z.string(),
-  location: z.string(),
-  priority: z.string(),
-})
+// Define the application type based on your backend data
+export interface JobApplication {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  experience: string;
+  salary: string;
+  rating: string;
+  reviews: string;
+  postedOn: string;
+  description: string;
+  skills: string[];
+  applyLink: string;
+  portal: string;
+  status: string;
+  appliedOn: string;
+  applicationId: string;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
-// Create a separate component for the drag handle
-function DragHandle({ id }: { id: number }) {
-  const { attributes, listeners } = useSortable({
-    id,
-  })
-
-  return (
-    <Button
-      {...attributes}
-      {...listeners}
-      variant="ghost"
-      size="icon"
-      className="size-7 text-muted-foreground hover:bg-transparent"
-    >
-      <GripVerticalIcon className="size-3 text-muted-foreground" />
-      <span className="sr-only">Drag to reorder</span>
-    </Button>
-  )
+interface PaginationState {
+  page: number;
+  limit: number;
+  totalItems: number;
+  totalPages: number;
 }
 
 const getStatusIcon = (status: string) => {
@@ -113,162 +96,204 @@ const getStatusIcon = (status: string) => {
   }
 }
 
-const getPriorityColor = (priority: string) => {
-  switch (priority) {
-    case "High":
-      return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
-    case "Medium":
-      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
-    case "Low":
-      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-    default:
-      return ""
-  }
+const formatDate = (dateString: string) => {
+  if (!dateString) return "N/A";
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric' 
+  });
 }
 
-const columns: ColumnDef<z.infer<typeof schema>>[] = [
-  {
-    id: "drag",
-    header: () => null,
-    cell: ({ row }) => <DragHandle id={row.original.id} />,
-  },
-  {
-    id: "select",
-    header: ({ table }) => (
-      <div className="flex items-center justify-center">
-        <Checkbox
-          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-        />
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div className="flex items-center justify-center">
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
-        />
-      </div>
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: "company",
-    header: "Company",
-    cell: ({ row }) => {
-      return <div className="font-medium">{row.original.company}</div>
-    },
-    enableHiding: false,
-  },
-  {
-    accessorKey: "position",
-    header: "Position",
-    cell: ({ row }) => <div>{row.original.position}</div>,
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => (
-      <Badge variant="outline" className="flex gap-1 px-1.5 text-muted-foreground [&_svg]:size-3">
-        {getStatusIcon(row.original.status)}
-        {row.original.status}
-      </Badge>
-    ),
-  },
-  {
-    accessorKey: "appliedDate",
-    header: "Applied Date",
-    cell: ({ row }) => <div>{row.original.appliedDate}</div>,
-  },
-  {
-    accessorKey: "source",
-    header: "Source",
-    cell: ({ row }) => <div>{row.original.source}</div>,
-  },
-  {
-    accessorKey: "salary",
-    header: "Salary Range",
-    cell: ({ row }) => <div>{row.original.salary}</div>,
-  },
-  {
-    accessorKey: "location",
-    header: "Location",
-    cell: ({ row }) => <div>{row.original.location}</div>,
-  },
-  {
-    accessorKey: "priority",
-    header: "Priority",
-    cell: ({ row }) => <Badge className={`${getPriorityColor(row.original.priority)}`}>{row.original.priority}</Badge>,
-  },
-  {
-    id: "actions",
-    cell: () => (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
-            <MoreVerticalIcon />
-            <span className="sr-only">Open menu</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-32">
-          <DropdownMenuItem>Edit</DropdownMenuItem>
-          <DropdownMenuItem>View Details</DropdownMenuItem>
-          <DropdownMenuItem>Add Note</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem>Delete</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
-  },
-]
-
-function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
-  const { transform, transition, setNodeRef, isDragging } = useSortable({
-    id: row.original.id,
-  })
-
-  return (
-    <TableRow
-      data-state={row.getIsSelected() && "selected"}
-      data-dragging={isDragging}
-      ref={setNodeRef}
-      className="relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80"
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition: transition,
-      }}
-    >
-      {row.getVisibleCells().map((cell) => (
-        <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
-      ))}
-    </TableRow>
-  )
-}
-
-export function ApplicationsTable({
-  data: initialData,
-}: {
-  data: z.infer<typeof schema>[]
-}) {
-  const [data, setData] = React.useState(() => initialData)
-  const [rowSelection, setRowSelection] = React.useState({})
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [sorting, setSorting] = React.useState<SortingState>([])
-  const [pagination, setPagination] = React.useState({
+export function JobApplicationsTable() {
+  const [applications, setApplications] = useState<JobApplication[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Pagination state
+  const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
-  })
-  const sortableId = React.useId()
-  const sensors = useSensors(useSensor(MouseSensor, {}), useSensor(TouchSensor, {}), useSensor(KeyboardSensor, {}))
+  });
+  
+  // API pagination state
+  const [apiPagination, setApiPagination] = useState<PaginationState>({
+    page: 1,
+    limit: 10,
+    totalItems: 0,
+    totalPages: 0
+  });
+  
+  // Filter states
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [companyFilter, setCompanyFilter] = useState<string>("");
+  const [portalFilter, setPortalFilter] = useState<string>("");
+  
+  // Sort state
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "appliedOn", desc: true }
+  ]);
+  
+  const [rowSelection, setRowSelection] = useState({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
-  const dataIds = React.useMemo<UniqueIdentifier[]>(() => data?.map(({ id }) => id) || [], [data])
+  // Define columns
+  const columns: ColumnDef<JobApplication>[] = [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <div className="flex items-center justify-center">
+          <Checkbox
+            checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            aria-label="Select all"
+          />
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center">
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+          />
+        </div>
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      accessorKey: "title",
+      header: "Job Title",
+      cell: ({ row }) => {
+        return <div className="font-medium max-w-[200px] truncate" title={row.original.title}>{row.original.title}</div>
+      },
+      enableHiding: false,
+    },
+    {
+      accessorKey: "company",
+      header: "Company",
+      cell: ({ row }) => <div>{row.original.company}</div>,
+    },
+    {
+      accessorKey: "location",
+      header: "Location",
+      cell: ({ row }) => <div>{row.original.location}</div>,
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => (
+        <Badge variant="outline" className="flex gap-1 px-1.5 text-muted-foreground [&_svg]:size-3">
+          {getStatusIcon(row.original.status)}
+          {row.original.status}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "appliedOn",
+      header: "Applied Date",
+      cell: ({ row }) => <div>{formatDate(row.original.appliedOn)}</div>,
+    },
+    {
+      accessorKey: "portal",
+      header: "Portal",
+      cell: ({ row }) => <div>{row.original.portal}</div>,
+    },
+    {
+      accessorKey: "salary",
+      header: "Salary Range",
+      cell: ({ row }) => <div>{row.original.salary}</div>,
+    },
+    {
+      accessorKey: "experience",
+      header: "Experience",
+      cell: ({ row }) => <div>{row.original.experience}</div>,
+    },
+    {
+      accessorKey: "applyLink",
+      header: "Job Link",
+      cell: ({ row }) => (
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="p-0 h-7 text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-950"
+          onClick={() => {
+            if (row.original.applyLink) {
+              window.open(row.original.applyLink, '_blank', 'noopener,noreferrer');
+            }
+          }}
+          disabled={!row.original.applyLink}
+        >
+          <span className="mr-1">View Job</span>
+          <ExternalLinkIcon className="h-3.5 w-3.5" />
+        </Button>
+      ),
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
+              <MoreVerticalIcon />
+              <span className="sr-only">Open menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-36">
+            <DropdownMenuItem>View Details</DropdownMenuItem>
+            <DropdownMenuItem>Update Status</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>Add Note</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
 
+  // Function to fetch data from API
+  const fetchApplications = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Prepare query params
+      const params = {
+        page: pagination.pageIndex + 1,
+        limit: pagination.pageSize,
+        status: statusFilter || undefined,
+        company: companyFilter || undefined,
+        portal: portalFilter || undefined,
+        sortBy: sorting.length > 0 ? sorting[0].id : 'appliedOn',
+        sortOrder: sorting.length > 0 && sorting[0].desc ? 'desc' : 'asc'
+      };
+      
+      const response = await jobApplicationService.jobApplications.getAll(params);
+      
+      if (response.data && response.data.success) {
+        setApplications(response.data.applications);
+        setApiPagination(response.data.pagination);
+      } else {
+        setError("Failed to fetch applications");
+      }
+    } catch (err) {
+      setError("Error fetching applications. Please try again.");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch data on component mount and when dependencies change
+  useEffect(() => {
+    fetchApplications();
+  }, [pagination.pageIndex, pagination.pageSize, statusFilter, companyFilter, portalFilter, sorting]);
+
+  // Table instance
   const table = useReactTable({
-    data,
+    data: applications,
     columns,
     state: {
       sorting,
@@ -277,7 +302,8 @@ export function ApplicationsTable({
       columnFilters,
       pagination,
     },
-    getRowId: (row) => row.id.toString(),
+    manualPagination: true,
+    pageCount: apiPagination.totalPages,
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
@@ -288,68 +314,119 @@ export function ApplicationsTable({
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-  })
+  });
 
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event
-    if (active && over && active.id !== over.id) {
-      setData((data) => {
-        const oldIndex = dataIds.indexOf(active.id)
-        const newIndex = dataIds.indexOf(over.id)
-        return arrayMove(data, oldIndex, newIndex)
-      })
-    }
-  }
+  // Calculate status counts
+  const statusCounts = React.useMemo(() => {
+    const counts = {
+      total: applications.length,
+      applied: 0,
+      screening: 0,
+      interview: 0,
+      offer: 0
+    };
+    
+    applications.forEach(app => {
+      if (app.status === "Applied") counts.applied++;
+      if (app.status === "Screening") counts.screening++;
+      if (app.status === "Interview") counts.interview++;
+      if (app.status === "Offer") counts.offer++;
+    });
+    
+    return counts;
+  }, [applications]);
+
+  // Reset filters
+  const resetFilters = () => {
+    setStatusFilter("");
+    setCompanyFilter("");
+    setPortalFilter("");
+    setPagination({
+      pageIndex: 0,
+      pageSize: 10,
+    });
+  };
 
   return (
     <Tabs defaultValue="all" className="flex w-full flex-col justify-start gap-6">
       <div className="flex items-center justify-between px-4 lg:px-6">
-        <Label htmlFor="view-selector" className="sr-only">
-          View
-        </Label>
-        <Select defaultValue="all">
-          <SelectTrigger className="@4xl/main:hidden flex w-fit" id="view-selector">
-            <SelectValue placeholder="Select a view" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Applications</SelectItem>
-            <SelectItem value="active">Active Applications</SelectItem>
-            <SelectItem value="interviews">Interviews</SelectItem>
-            <SelectItem value="offers">Offers</SelectItem>
-          </SelectContent>
-        </Select>
-        <TabsList className="@4xl/main:flex hidden">
+        <TabsList className="flex">
           <TabsTrigger value="all">All Applications</TabsTrigger>
-          <TabsTrigger value="active" className="gap-1">
-            Active Applications{" "}
+          <TabsTrigger value="applied" className="gap-1" onClick={() => setStatusFilter("Applied")}>
+            Applied{" "}
             <Badge
               variant="secondary"
               className="flex h-5 w-5 items-center justify-center rounded-full bg-muted-foreground/30"
             >
-              12
+              {statusCounts.applied}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="interviews" className="gap-1">
+          <TabsTrigger value="interview" className="gap-1" onClick={() => setStatusFilter("Interview")}>
             Interviews{" "}
             <Badge
               variant="secondary"
               className="flex h-5 w-5 items-center justify-center rounded-full bg-muted-foreground/30"
             >
-              3
+              {statusCounts.interview}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="offers">Offers</TabsTrigger>
+          <TabsTrigger value="offer" onClick={() => setStatusFilter("Offer")}>Offers</TabsTrigger>
         </TabsList>
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
-                <ColumnsIcon />
-                <span className="hidden lg:inline">Customize Columns</span>
-                <span className="lg:hidden">Columns</span>
-                <ChevronDownIcon />
+                <FilterIcon className="mr-2 h-4 w-4" />
+                <span className="hidden md:inline">Filters</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <div className="p-2">
+                <Label htmlFor="company-filter" className="text-xs font-medium">Company</Label>
+                <Input 
+                  id="company-filter" 
+                  placeholder="Filter by company"
+                  value={companyFilter}
+                  onChange={(e) => setCompanyFilter(e.target.value)}
+                  className="mt-1 h-8"
+                />
+              </div>
+              <div className="p-2">
+                <Label htmlFor="portal-filter" className="text-xs font-medium">Portal</Label>
+                <Select 
+                  value={portalFilter} 
+                  onValueChange={setPortalFilter}
+                >
+                  <SelectTrigger id="portal-filter" className="mt-1 h-8">
+                    <SelectValue placeholder="Select Portal" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Portals</SelectItem>
+                    <SelectItem value="Naukri">Naukri</SelectItem>
+                    <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                    <SelectItem value="Indeed">Indeed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <DropdownMenuSeparator />
+              <div className="p-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={resetFilters}
+                >
+                  <CheckIcon className="mr-2 h-4 w-4" />
+                  Reset Filters
+                </Button>
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <ColumnsIcon className="mr-2 h-4 w-4" />
+                <span className="hidden md:inline">Columns</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -370,21 +447,34 @@ export function ApplicationsTable({
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="outline" size="sm">
-            <PlusIcon />
-            <span className="hidden lg:inline">Add Application</span>
-          </Button>
         </div>
       </div>
       <TabsContent value="all" className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
         <div className="overflow-hidden rounded-lg border">
-          <DndContext
-            collisionDetection={closestCenter}
-            modifiers={[restrictToVerticalAxis]}
-            onDragEnd={handleDragEnd}
-            sensors={sensors}
-            id={sortableId}
-          >
+          {isLoading ? (
+            <div className="flex h-64 items-center justify-center">
+              <div className="text-center">
+                <div className="mb-2 text-muted-foreground">Loading applications...</div>
+                <div className="mx-auto h-4 w-32 animate-pulse rounded-full bg-muted"></div>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="flex h-64 items-center justify-center">
+              <div className="text-center text-destructive">
+                <div>{error}</div>
+                <Button variant="outline" size="sm" className="mt-4" onClick={fetchApplications}>
+                  Retry
+                </Button>
+              </div>
+            </div>
+          ) : applications.length === 0 ? (
+            <div className="flex h-64 items-center justify-center">
+              <div className="text-center">
+                <div className="mb-2 text-muted-foreground">No applications found</div>
+                <div className="text-sm text-muted-foreground">Try adjusting your filters</div>
+              </div>
+            </div>
+          ) : (
             <Table>
               <TableHeader className="sticky top-0 z-10 bg-muted">
                 {table.getHeaderGroups().map((headerGroup) => (
@@ -401,45 +491,40 @@ export function ApplicationsTable({
                   </TableRow>
                 ))}
               </TableHeader>
-              <TableBody className="**:data-[slot=table-cell]:first:w-8">
-                {table.getRowModel().rows?.length ? (
-                  <SortableContext items={dataIds} strategy={verticalListSortingStrategy}>
-                    {table.getRowModel().rows.map((row) => (
-                      <DraggableRow key={row.id} row={row} />
+              <TableBody>
+                {table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
                     ))}
-                  </SortableContext>
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={columns.length} className="h-24 text-center">
-                      No results.
-                    </TableCell>
                   </TableRow>
-                )}
+                ))}
               </TableBody>
             </Table>
-          </DndContext>
+          )}
         </div>
         <div className="flex items-center justify-between px-4">
-          <div className="hidden flex-1 text-sm text-muted-foreground lg:flex">
-            {table.getFilteredSelectedRowModel().rows.length} of {table.getFilteredRowModel().rows.length} row(s)
-            selected.
+          <div className="hidden flex-1 text-sm text-muted-foreground md:flex">
+            {table.getFilteredSelectedRowModel().rows.length} of {apiPagination.totalItems} application(s) selected.
           </div>
-          <div className="flex w-full items-center gap-8 lg:w-fit">
-            <div className="hidden items-center gap-2 lg:flex">
+          <div className="flex w-full items-center gap-8 md:w-fit">
+            <div className="hidden items-center gap-2 md:flex">
               <Label htmlFor="rows-per-page" className="text-sm font-medium">
                 Rows per page
               </Label>
               <Select
-                value={`${table.getState().pagination.pageSize}`}
+                value={`${pagination.pageSize}`}
                 onValueChange={(value) => {
                   table.setPageSize(Number(value))
                 }}
               >
                 <SelectTrigger className="w-20" id="rows-per-page">
-                  <SelectValue placeholder={table.getState().pagination.pageSize} />
+                  <SelectValue placeholder={pagination.pageSize} />
                 </SelectTrigger>
                 <SelectContent side="top">
-                  {[10, 20, 30, 40, 50].map((pageSize) => (
+                  {[10, 20, 30, 50].map((pageSize) => (
                     <SelectItem key={pageSize} value={`${pageSize}`}>
                       {pageSize}
                     </SelectItem>
@@ -448,12 +533,12 @@ export function ApplicationsTable({
               </Select>
             </div>
             <div className="flex w-fit items-center justify-center text-sm font-medium">
-              Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+              Page {pagination.pageIndex + 1} of {apiPagination.totalPages || 1}
             </div>
-            <div className="ml-auto flex items-center gap-2 lg:ml-0">
+            <div className="ml-auto flex items-center gap-2 md:ml-0">
               <Button
                 variant="outline"
-                className="hidden h-8 w-8 p-0 lg:flex"
+                className="hidden h-8 w-8 p-0 md:flex"
                 onClick={() => table.setPageIndex(0)}
                 disabled={!table.getCanPreviousPage()}
               >
@@ -482,7 +567,7 @@ export function ApplicationsTable({
               </Button>
               <Button
                 variant="outline"
-                className="hidden size-8 lg:flex"
+                className="hidden size-8 md:flex"
                 size="icon"
                 onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                 disabled={!table.getCanNextPage()}
@@ -494,14 +579,25 @@ export function ApplicationsTable({
           </div>
         </div>
       </TabsContent>
-      <TabsContent value="active" className="flex flex-col px-4 lg:px-6">
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
+      <TabsContent value="applied" className="flex flex-col px-4 lg:px-6">
+        {/* Using the same table but with different filter */}
+        <div className="relative flex flex-col gap-4 overflow-auto">
+          {/* Table content would be identical to the "all" tab, but filtered */}
+          {/* For simplicity, I'm not duplicating the entire table here */}
+          <div className="aspect-video w-full flex-1 rounded-lg border border-dashed flex items-center justify-center">
+            <span className="text-muted-foreground">Applied jobs will appear here</span>
+          </div>
+        </div>
       </TabsContent>
-      <TabsContent value="interviews" className="flex flex-col px-4 lg:px-6">
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
+      <TabsContent value="interview" className="flex flex-col px-4 lg:px-6">
+        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed flex items-center justify-center">
+          <span className="text-muted-foreground">Interview jobs will appear here</span>
+        </div>
       </TabsContent>
-      <TabsContent value="offers" className="flex flex-col px-4 lg:px-6">
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
+      <TabsContent value="offer" className="flex flex-col px-4 lg:px-6">
+        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed flex items-center justify-center">
+          <span className="text-muted-foreground">Offers will appear here</span>
+        </div>
       </TabsContent>
     </Tabs>
   )
