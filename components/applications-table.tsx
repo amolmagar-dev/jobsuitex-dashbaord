@@ -46,6 +46,14 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle
+} from "@/components/ui/dialog"
 import { useState, useEffect } from "react"
 import jobApplicationService from "@/services/jobApplicationService"
 
@@ -110,6 +118,10 @@ export function JobApplicationsTable() {
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Selected application for details modal
+  const [selectedApplication, setSelectedApplication] = useState<JobApplication | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -243,10 +255,19 @@ export function JobApplicationsTable() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-36">
-            <DropdownMenuItem>View Details</DropdownMenuItem>
-            <DropdownMenuItem>Update Status</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => {
+              setSelectedApplication(row.original);
+              setDetailsDialogOpen(true);
+            }}>
+              View Details
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled className="text-muted-foreground opacity-50">
+              Update Status
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Add Note</DropdownMenuItem>
+            <DropdownMenuItem disabled className="text-muted-foreground opacity-50">
+              Add Note
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -348,11 +369,26 @@ export function JobApplicationsTable() {
   };
 
   return (
-    <Tabs defaultValue="all" className="flex w-full flex-col justify-start gap-6">
+    <>
+        <Tabs 
+      defaultValue="all" 
+      className="flex w-full flex-col justify-start gap-6"
+      onValueChange={(value) => {
+        if (value === "all") {
+          setStatusFilter("");
+        } else if (value === "applied") {
+          setStatusFilter("Applied");
+        } else if (value === "interview") {
+          setStatusFilter("Interview");
+        } else if (value === "offer") {
+          setStatusFilter("Offer");
+        }
+      }}
+    >
       <div className="flex items-center justify-between px-4 lg:px-6">
         <TabsList className="flex">
           <TabsTrigger value="all">All Applications</TabsTrigger>
-          <TabsTrigger value="applied" className="gap-1" onClick={() => setStatusFilter("Applied")}>
+          <TabsTrigger value="applied" className="gap-1">
             Applied{" "}
             <Badge
               variant="secondary"
@@ -361,7 +397,7 @@ export function JobApplicationsTable() {
               {statusCounts.applied}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="interview" className="gap-1" onClick={() => setStatusFilter("Interview")}>
+          <TabsTrigger value="interview" className="gap-1">
             Interviews{" "}
             <Badge
               variant="secondary"
@@ -370,7 +406,7 @@ export function JobApplicationsTable() {
               {statusCounts.interview}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="offer" onClick={() => setStatusFilter("Offer")}>Offers</TabsTrigger>
+          <TabsTrigger value="offer">Offers</TabsTrigger>
         </TabsList>
         <div className="flex items-center gap-2">
           <DropdownMenu>
@@ -394,14 +430,14 @@ export function JobApplicationsTable() {
               <div className="p-2">
                 <Label htmlFor="portal-filter" className="text-xs font-medium">Portal</Label>
                 <Select 
-                  value={portalFilter} 
-                  onValueChange={setPortalFilter}
+                  value={portalFilter || "all"} 
+                  onValueChange={(value) => setPortalFilter(value === "all" ? "" : value)}
                 >
                   <SelectTrigger id="portal-filter" className="mt-1 h-8">
                     <SelectValue placeholder="Select Portal" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Portals</SelectItem>
+                    <SelectItem value="all">All Portals</SelectItem>
                     <SelectItem value="Naukri">Naukri</SelectItem>
                     <SelectItem value="LinkedIn">LinkedIn</SelectItem>
                     <SelectItem value="Indeed">Indeed</SelectItem>
@@ -600,5 +636,102 @@ export function JobApplicationsTable() {
         </div>
       </TabsContent>
     </Tabs>
+    
+    <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+      <DialogContent className="sm:max-w-[550px]">
+        <DialogHeader>
+          <DialogTitle>{selectedApplication?.title || "Job Details"}</DialogTitle>
+          <DialogDescription>
+            {selectedApplication?.company} • {selectedApplication?.location}
+          </DialogDescription>
+        </DialogHeader>
+        
+        {selectedApplication && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="font-medium text-muted-foreground">Status</p>
+                <Badge variant="outline" className="mt-1 flex w-fit gap-1 px-1.5 text-muted-foreground [&_svg]:size-3">
+                  {getStatusIcon(selectedApplication.status)}
+                  {selectedApplication.status}
+                </Badge>
+              </div>
+              <div>
+                <p className="font-medium text-muted-foreground">Applied On</p>
+                <p className="mt-1">{formatDate(selectedApplication.appliedOn)}</p>
+              </div>
+              <div>
+                <p className="font-medium text-muted-foreground">Posted On</p>
+                <p className="mt-1">{selectedApplication.postedOn}</p>
+              </div>
+              <div>
+                <p className="font-medium text-muted-foreground">Experience Required</p>
+                <p className="mt-1">{selectedApplication.experience}</p>
+              </div>
+              <div>
+                <p className="font-medium text-muted-foreground">Salary Range</p>
+                <p className="mt-1">{selectedApplication.salary}</p>
+              </div>
+              <div>
+                <p className="font-medium text-muted-foreground">Portal</p>
+                <p className="mt-1">{selectedApplication.portal}</p>
+              </div>
+              <div>
+                <p className="font-medium text-muted-foreground">Application ID</p>
+                <p className="mt-1">{selectedApplication.applicationId}</p>
+              </div>
+            </div>
+            
+            <div>
+              <p className="font-medium text-muted-foreground">Description</p>
+              <p className="mt-1 text-sm">{selectedApplication.description}</p>
+            </div>
+            
+            {selectedApplication.skills && selectedApplication.skills.length > 0 && (
+              <div>
+                <p className="font-medium text-muted-foreground">Skills Required</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {selectedApplication.skills.map((skill, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {selectedApplication.notes && (
+              <div>
+                <p className="font-medium text-muted-foreground">Notes</p>
+                <p className="mt-1 text-sm">{selectedApplication.notes}</p>
+              </div>
+            )}
+          </div>
+        )}
+        
+        <DialogFooter className="flex sm:justify-between">
+          <Button 
+            variant="secondary" 
+            onClick={() => setDetailsDialogOpen(false)}
+          >
+            Close
+          </Button>
+          <Button 
+            variant="default"
+            onClick={() => {
+              if (selectedApplication?.applyLink) {
+                window.open(selectedApplication.applyLink, '_blank', 'noopener,noreferrer');
+              }
+            }}
+            disabled={!selectedApplication?.applyLink}
+          >
+            <span className="mr-2">View Original Listing</span>
+            <ExternalLinkIcon className="h-4 w-4" />
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
+
   )
 }
