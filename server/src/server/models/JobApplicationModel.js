@@ -211,6 +211,30 @@ export const JobApplicationModel = {
 
         const results = await app.mongo.db.collection('jobApplications').aggregate(pipeline).toArray();
         return results[0];
+    },
+
+    /**
+     * Count the number of jobs applied today for a specific user
+     * @param {FastifyInstance} app - Fastify instance
+     * @param {string} userId - User ID
+     * @returns {Promise<number>} Count of today's applications
+     */
+    async countTodaysApplications(app, userId) {
+        // Create start and end dates for today
+        const today = new Date();
+        const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+
+        // Query for applications created today for the specific user
+        const result = await app.mongo.db.collection('jobApplications').countDocuments({
+            userId: userId,
+            appliedOn: {
+                $gte: startOfDay,
+                $lte: endOfDay
+            }
+        });
+
+        return result;
     }
 };
 

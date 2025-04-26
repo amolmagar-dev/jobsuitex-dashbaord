@@ -372,6 +372,11 @@ class JobRunner {
 
                         switch (portal.type) {
                             case 'naukri':
+                                const userApplyCount = await this.app.jobApplicationModel.countTodaysApplications(portalJob.user);
+                                if (userApplyCount >= 30){
+                                    this.app.log.warn(`User ${user} has already applied to 35 jobs today, skipping Naukri automation`);
+                                    return;
+                                }
                                 const naukriAutomation = new NaukriJobAutomation(browser, portalJob, this.app, user, credentials);
                                 await naukriAutomation.start();
                                 break;
@@ -398,7 +403,7 @@ class JobRunner {
             } finally {
                 // Close the browser after all portals are processed
                 try {
-                    await browser.closeBrowser();
+                    await browserInstance.closeBrowser();
                 } catch (error) {
                     this.app.log.error({ err: error }, `Error closing browser for job ${jobId}`);
                 }

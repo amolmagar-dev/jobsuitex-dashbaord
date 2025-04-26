@@ -15,7 +15,7 @@ export class NaukriJobAutomation {
             email: credentials.username || process.env.NAUKRI_USERNAME,
             password: credentials.password || process.env.NAUKRI_PASSWORD
         };
-        this.maxPagesToScrape = parseInt(10);
+        this.maxPagesToScrape = parseInt(process.env.SCRAPE_PAGES || "5");
         this.sortBy = process.env.JOB_SHORT_BY || "Date";
     }
 
@@ -116,7 +116,7 @@ export class NaukriJobAutomation {
                 )
                 : false;
 
-            return  skillMatch && ratingMatch ;
+            return  skillMatch ;
         });
     }
 
@@ -570,9 +570,7 @@ export class NaukriJobAutomation {
                 location,
                 minExp: Number(experience),
                 maxExp: Number(experience) + 2,
-                requiredSkills: Array.isArray(this.jobConfig.filterConfig.requiredSkills)
-                    ? this.jobConfig.filterConfig.requiredSkills
-                    : keywords.split(',').map(skill => skill.trim()),
+                requiredSkills: keywords.split(',').map(skill => skill.trim()),
                 excludeCompanies: this.jobConfig.filterConfig.excludeCompanies || [],
                 minRating: this.jobConfig.filterConfig.minRating || 3.5
             };
@@ -630,7 +628,6 @@ export class NaukriJobAutomation {
             }
 
             await page.close();
-            await this.browser.closeBrowser();
 
             return {
                 success: true,

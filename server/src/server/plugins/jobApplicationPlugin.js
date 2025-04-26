@@ -19,7 +19,8 @@ async function jobApplicationModelPlugin(fastify, options) {
         delete: (id) => JobApplicationModel.delete(fastify, id),
         getAllForUser: (userId, options) => JobApplicationModel.getAllForUser(fastify, userId, options),
         getStatistics: (userId) => JobApplicationModel.getStatistics(fastify, userId),
-        createNotification: (job) => createNotification(job)
+        createNotification: (job) => createNotification(job),
+        countTodaysApplications: (userId) => JobApplicationModel.countTodaysApplications(fastify, userId)
     });
 }
 
