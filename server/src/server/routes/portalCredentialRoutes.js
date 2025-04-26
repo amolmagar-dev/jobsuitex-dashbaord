@@ -136,35 +136,35 @@ export default async function portalCredentialRoutes(fastify, options) {
     // Verify credentials (test login)
     fastify.post('/portal-credentials/:portal/verify', { onRequest: [fastify.authenticate] }, async (request, reply) => {
         try {
-            const userId = request.user.id;
+            // const userId = request.user.id;
             const portal = request.params.portal;
 
-            const credentials = request.body;
+            // const credentials = request.body;
 
-            if (!credentials) {
-                return reply.code(404).send({
-                    error: 'Not Found',
-                    message: `No credentials found for ${portal}`
-                });
-            }
+            // if (!credentials) {
+            //     return reply.code(404).send({
+            //         error: 'Not Found',
+            //         message: `No credentials found for ${portal}`
+            //     });
+            // }
 
-            if (!(portal in verify)) {
-                return reply.code(400).send({
-                    error: 'Unsupported Portal',
-                    message: `Verification not implemented for ${portal}`
-                });
-            }
+            // if (!(portal in verify)) {
+            //     return reply.code(400).send({
+            //         error: 'Unsupported Portal',
+            //         message: `Verification not implemented for ${portal}`
+            //     });
+            // }
 
-            const isValid = await verify[portal](credentials.username, credentials.password);
+            // const isValid = await verify[portal](credentials.username, credentials.password);
 
-            if (!isValid) {
-                throw new Error('Invalid credentials');
-            }
+            // if (!isValid) {
+            //     throw new Error('Invalid credentials');
+            // }
 
-            const mockCookies = `session=mock-session-${Date.now()}; domain=.${portal}.com; path=/;`;
-            await fastify.portalCredentialModel.updateCookies(userId, portal, mockCookies);
+            // const mockCookies = `session=mock-session-${Date.now()}; domain=.${portal}.com; path=/;`;
+            // await fastify.portalCredentialModel.updateCookies(userId, portal, mockCookies);
 
-            logger.info(`Credentials verified for ${portal} by user ${userId}`);
+            // logger.info(`Credentials verified for ${portal} by user ${userId}`);
 
             return {
                 success: true,
