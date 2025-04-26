@@ -116,7 +116,7 @@ export class NaukriJobAutomation {
                 )
                 : false;
 
-            return  skillMatch && ratingMatch ;
+            return  skillMatch ;
         });
     }
 
@@ -570,9 +570,7 @@ export class NaukriJobAutomation {
                 location,
                 minExp: Number(experience),
                 maxExp: Number(experience) + 2,
-                requiredSkills: Array.isArray(this.jobConfig.filterConfig.requiredSkills)
-                    ? this.jobConfig.filterConfig.requiredSkills
-                    : keywords.split(',').map(skill => skill.trim()),
+                requiredSkills: keywords.split(',').map(skill => skill.trim()),
                 excludeCompanies: this.jobConfig.filterConfig.excludeCompanies || [],
                 minRating: this.jobConfig.filterConfig.minRating || 3.5
             };
