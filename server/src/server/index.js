@@ -62,7 +62,7 @@ fastify.register(userModelPlugin);
 fastify.register(jobConfigPlugin);
 fastify.register(portalCredentialPlugin);
 fastify.register(jobApplicationModelPlugin);
-// await fastify.register(jobRunnerPlugin, {});
+await fastify.register(jobRunnerPlugin, {});
 
 
 
