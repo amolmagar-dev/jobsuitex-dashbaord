@@ -36,8 +36,8 @@ export function AutoJobApplicationModal({ open, onOpenChange }: AutoJobApplicati
   // Steps configuration
   const steps = [
     { id: 1, title: "Portal Credentials", icon: null },
-    { id: 2, title: "Search Criteria", icon: null },
-    { id: 3, title: "AI Training", icon: null },
+    { id: 2, title: "AI Training", icon: null },
+    { id: 3, title: "Search Criteria", icon: null },
     { id: 4, title: "Schedule", icon: null },
     { id: 5, title: "Notifications", icon: null },
     { id: 6, title: "Review & Execute", icon: null },
@@ -49,9 +49,9 @@ export function AutoJobApplicationModal({ open, onOpenChange }: AutoJobApplicati
       case 1:
         return <PortalCredentialsStep state={state} />;
       case 2:
-        return <SearchCriteriaStep state={state} />;
-      case 3:
         return <AITrainingStep state={state} />;
+      case 3:
+        return <SearchCriteriaStep state={state} />;
       case 4:
         return <ScheduleStep state={state} />;
       case 5:
