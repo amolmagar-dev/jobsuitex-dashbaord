@@ -178,6 +178,7 @@ export function useJobConfig(isOpen: boolean) {
 
       if (response && response.success && response.credential) {
         setUsername(response.credential.username || "");
+        setPassword(response.credential.password || "");
         setCredentialsSaved(true);
         // If credentials were previously saved, we'll consider them verified
         setIsVerified(true);
@@ -189,8 +190,6 @@ export function useJobConfig(isOpen: boolean) {
         setIsVerified(false);
       }
 
-      // Always clear password for security
-      setPassword("");
     } catch (error) {
       console.error("Error fetching credentials:", error);
       setCredentialsSaved(false);
@@ -202,20 +201,8 @@ export function useJobConfig(isOpen: boolean) {
     try {
       setLoading(true);
 
-      if (!username) {
-        toast.error("Username is required");
-        return;
-      }
-
-      // Only allow saving if verification was successful or credentials were previously saved
-      if (!isVerified && !credentialsSaved) {
-        toast.error("Please verify your connection before saving credentials");
-        return;
-      }
-
-      // Only require password for new credentials
-      if (!credentialsSaved && !password) {
-        toast.error("Password is required");
+      if (!username && !password) {
+        toast.error("Username and Password is required");
         return;
       }
 
@@ -229,14 +216,11 @@ export function useJobConfig(isOpen: boolean) {
 
       if (response && response.success) {
         setCredentialsSaved(true);
-        setPassword(""); // Clear password for security
         toast.success("Credentials saved successfully");
-      } else {
-        toast.error(response?.message || "Failed to save credentials");
-      }
+      } 
     } catch (error) {
-      console.error("Error saving credentials:", error);
-      toast.error("Failed to save credentials");
+        const errorMessage = (error as any)?.response?.data?.message || "An unexpected error occurred";
+        toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
