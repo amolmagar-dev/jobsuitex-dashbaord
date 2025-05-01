@@ -56,6 +56,7 @@ import {
 } from "@/components/ui/dialog"
 import { useState, useEffect } from "react"
 import jobApplicationService from "@/services/jobApplicationService"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 // Define the application type based on your backend data
 export interface JobApplication {
@@ -115,6 +116,9 @@ const formatDate = (dateString: string) => {
 }
 
 export function JobApplicationsTable() {
+  // Use the isMobile hook
+  const isMobile = useIsMobile();
+  
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -151,6 +155,51 @@ export function JobApplicationsTable() {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
+  // Set appropriate column visibility and page size for mobile
+  useEffect(() => {
+    if (isMobile) {
+      setColumnVisibility({
+        title: true,
+        company: true,
+        status: true,
+        actions: true,
+        // Hide these columns on mobile
+        select: false,
+        location: false,
+        appliedOn: false,
+        portal: false,
+        salary: false,
+        experience: false,
+        applyLink: false
+      });
+      
+      // Set smaller page size for mobile
+      setPagination(prev => ({
+        ...prev,
+        pageSize: 5
+      }));
+      
+      setApiPagination(prev => ({
+        ...prev,
+        limit: 5
+      }));
+    } else {
+      // Reset to defaults for desktop
+      setColumnVisibility({});
+      
+      // Reset to default page size
+      setPagination(prev => ({
+        ...prev,
+        pageSize: 10
+      }));
+      
+      setApiPagination(prev => ({
+        ...prev,
+        limit: 10
+      }));
+    }
+  }, [isMobile]);
+
   // Define columns
   const columns: ColumnDef<JobApplication>[] = [
     {
@@ -180,7 +229,20 @@ export function JobApplicationsTable() {
       accessorKey: "title",
       header: "Job Title",
       cell: ({ row }) => {
-        return <div className="font-medium max-w-[200px] truncate" title={row.original.title}>{row.original.title}</div>
+        // Enhanced mobile job title cell with company name
+        if (isMobile) {
+          return (
+            <div className="space-y-1">
+              <div className="font-medium max-w-[200px] truncate" title={row.original.title}>
+                {row.original.title}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {row.original.company}
+              </div>
+            </div>
+          );
+        }
+        return <div className="font-medium max-w-[200px] truncate" title={row.original.title}>{row.original.title}</div>;
       },
       enableHiding: false,
     },
@@ -364,374 +426,402 @@ export function JobApplicationsTable() {
     setPortalFilter("");
     setPagination({
       pageIndex: 0,
-      pageSize: 10,
+      pageSize: isMobile ? 5 : 10,
     });
   };
 
   return (
     <>
-        <Tabs 
-      defaultValue="all" 
-      className="flex w-full flex-col justify-start gap-6"
-      onValueChange={(value) => {
-        if (value === "all") {
-          setStatusFilter("");
-        } else if (value === "applied") {
-          setStatusFilter("Applied");
-        } else if (value === "interview") {
-          setStatusFilter("Interview");
-        } else if (value === "offer") {
-          setStatusFilter("Offer");
-        }
-      }}
-    >
-      <div className="flex items-center justify-between px-4 lg:px-6">
-        <TabsList className="flex">
-          <TabsTrigger value="all">All Applications</TabsTrigger>
-          <TabsTrigger value="applied" className="gap-1">
-            Applied{" "}
-            <Badge
-              variant="secondary"
-              className="flex h-5 w-5 items-center justify-center rounded-full bg-muted-foreground/30"
-            >
-              {statusCounts.applied}
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger value="interview" className="gap-1">
-            Interviews{" "}
-            <Badge
-              variant="secondary"
-              className="flex h-5 w-5 items-center justify-center rounded-full bg-muted-foreground/30"
-            >
-              {statusCounts.interview}
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger value="offer">Offers</TabsTrigger>
-        </TabsList>
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <FilterIcon className="mr-2 h-4 w-4" />
-                <span className="hidden md:inline">Filters</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <div className="p-2">
-                <Label htmlFor="company-filter" className="text-xs font-medium">Company</Label>
-                <Input 
-                  id="company-filter" 
-                  placeholder="Filter by company"
-                  value={companyFilter}
-                  onChange={(e) => setCompanyFilter(e.target.value)}
-                  className="mt-1 h-8"
-                />
-              </div>
-              <div className="p-2">
-                <Label htmlFor="portal-filter" className="text-xs font-medium">Portal</Label>
-                <Select 
-                  value={portalFilter || "all"} 
-                  onValueChange={(value) => setPortalFilter(value === "all" ? "" : value)}
-                >
-                  <SelectTrigger id="portal-filter" className="mt-1 h-8">
-                    <SelectValue placeholder="Select Portal" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Portals</SelectItem>
-                    <SelectItem value="Naukri">Naukri</SelectItem>
-                    <SelectItem value="LinkedIn">LinkedIn</SelectItem>
-                    <SelectItem value="Indeed">Indeed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <DropdownMenuSeparator />
-              <div className="p-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full"
-                  onClick={resetFilters}
-                >
-                  <CheckIcon className="mr-2 h-4 w-4" />
-                  Reset Filters
+      <Tabs 
+        defaultValue="all" 
+        className="flex w-full flex-col justify-start gap-3 sm:gap-6"
+        onValueChange={(value) => {
+          if (value === "all") {
+            setStatusFilter("");
+          } else if (value === "applied") {
+            setStatusFilter("Applied");
+          } else if (value === "interview") {
+            setStatusFilter("Interview");
+          } else if (value === "offer") {
+            setStatusFilter("Offer");
+          }
+        }}
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between px-2 sm:px-4 lg:px-6 gap-2">
+          <TabsList className="flex overflow-x-auto no-scrollbar">
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="applied" className="gap-1">
+              Applied{" "}
+              <Badge
+                variant="secondary"
+                className="flex h-5 w-5 items-center justify-center rounded-full bg-muted-foreground/30"
+              >
+                {statusCounts.applied}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger value="interview" className="gap-1">
+              Interviews{" "}
+              <Badge
+                variant="secondary"
+                className="flex h-5 w-5 items-center justify-center rounded-full bg-muted-foreground/30"
+              >
+                {statusCounts.interview}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger value="offer">Offers</TabsTrigger>
+          </TabsList>
+          
+          <div className="flex items-center gap-2 mt-2 sm:mt-0">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <FilterIcon className="mr-2 h-4 w-4" />
+                  <span className={isMobile ? "" : "hidden sm:inline"}>Filters</span>
                 </Button>
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <ColumnsIcon className="mr-2 h-4 w-4" />
-                <span className="hidden md:inline">Columns</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              {table
-                .getAllColumns()
-                .filter((column) => typeof column.accessorFn !== "undefined" && column.getCanHide())
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  )
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-      <TabsContent value="all" className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
-        <div className="overflow-hidden rounded-lg border">
-          {isLoading ? (
-            <div className="flex h-64 items-center justify-center">
-              <div className="text-center">
-                <div className="mb-2 text-muted-foreground">Loading applications...</div>
-                <div className="mx-auto h-4 w-32 animate-pulse rounded-full bg-muted"></div>
-              </div>
-            </div>
-          ) : error ? (
-            <div className="flex h-64 items-center justify-center">
-              <div className="text-center text-destructive">
-                <div>{error}</div>
-                <Button variant="outline" size="sm" className="mt-4" onClick={fetchApplications}>
-                  Retry
-                </Button>
-              </div>
-            </div>
-          ) : applications.length === 0 ? (
-            <div className="flex h-64 items-center justify-center">
-              <div className="text-center">
-                <div className="mb-2 text-muted-foreground">No applications found</div>
-                <div className="text-sm text-muted-foreground">Try adjusting your filters</div>
-              </div>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader className="sticky top-0 z-10 bg-muted">
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => {
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="p-2">
+                  <Label htmlFor="company-filter" className="text-xs font-medium">Company</Label>
+                  <Input 
+                    id="company-filter" 
+                    placeholder="Filter by company"
+                    value={companyFilter}
+                    onChange={(e) => setCompanyFilter(e.target.value)}
+                    className="mt-1 h-8"
+                  />
+                </div>
+                <div className="p-2">
+                  <Label htmlFor="portal-filter" className="text-xs font-medium">Portal</Label>
+                  <Select 
+                    value={portalFilter || "all"} 
+                    onValueChange={(value) => setPortalFilter(value === "all" ? "" : value)}
+                  >
+                    <SelectTrigger id="portal-filter" className="mt-1 h-8">
+                      <SelectValue placeholder="Select Portal" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Portals</SelectItem>
+                      <SelectItem value="Naukri">Naukri</SelectItem>
+                      <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                      <SelectItem value="Indeed">Indeed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <DropdownMenuSeparator />
+                <div className="p-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={resetFilters}
+                  >
+                    <CheckIcon className="mr-2 h-4 w-4" />
+                    Reset Filters
+                  </Button>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            {!isMobile && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <ColumnsIcon className="mr-2 h-4 w-4" />
+                    <span className="hidden sm:inline">Columns</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  {table
+                    .getAllColumns()
+                    .filter((column) => typeof column.accessorFn !== "undefined" && column.getCanHide())
+                    .map((column) => {
                       return (
-                        <TableHead key={header.id} colSpan={header.colSpan}>
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(header.column.columnDef.header, header.getContext())}
-                        </TableHead>
+                        <DropdownMenuCheckboxItem
+                          key={column.id}
+                          className="capitalize"
+                          checked={column.getIsVisible()}
+                          onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                        >
+                          {column.id}
+                        </DropdownMenuCheckboxItem>
                       )
                     })}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+        </div>
+        
+        <TabsContent value="all" className="relative flex flex-col gap-4 overflow-auto px-2 sm:px-4 lg:px-6">
+          <div className="overflow-hidden rounded-lg border">
+            {isLoading ? (
+              <div className="flex h-64 items-center justify-center">
+                <div className="text-center">
+                  <div className="mb-2 text-muted-foreground">Loading applications...</div>
+                  <div className="mx-auto h-4 w-32 animate-pulse rounded-full bg-muted"></div>
+                </div>
+              </div>
+            ) : error ? (
+              <div className="flex h-64 items-center justify-center">
+                <div className="text-center text-destructive">
+                  <div>{error}</div>
+                  <Button variant="outline" size="sm" className="mt-4" onClick={fetchApplications}>
+                    Retry
+                  </Button>
+                </div>
+              </div>
+            ) : applications.length === 0 ? (
+              <div className="flex h-64 items-center justify-center">
+                <div className="text-center">
+                  <div className="mb-2 text-muted-foreground">No applications found</div>
+                  <div className="text-sm text-muted-foreground">Try adjusting your filters</div>
+                </div>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="sticky top-0 z-10 bg-muted">
+                    {table.getHeaderGroups().map((headerGroup) => (
+                      <TableRow key={headerGroup.id}>
+                        {headerGroup.headers.map((header) => {
+                          return (
+                            <TableHead 
+                              key={header.id} 
+                              colSpan={header.colSpan}
+                              className={isMobile ? "px-2 py-2 text-xs" : ""}
+                            >
+                              {header.isPlaceholder
+                                ? null
+                                : flexRender(header.column.columnDef.header, header.getContext())}
+                            </TableHead>
+                          )
+                        })}
+                      </TableRow>
                     ))}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </div>
-        <div className="flex items-center justify-between px-4">
-          <div className="hidden flex-1 text-sm text-muted-foreground md:flex">
-            {table.getFilteredSelectedRowModel().rows.length} of {apiPagination.totalItems} application(s) selected.
+                  </TableHeader>
+                  <TableBody>
+                    {table.getRowModel().rows.map((row) => (
+                      <TableRow 
+                        key={row.id} 
+                        data-state={row.getIsSelected() && "selected"}
+                        className={isMobile ? "cursor-pointer" : ""}
+                        onClick={isMobile ? () => {
+                          setSelectedApplication(row.original);
+                          setDetailsDialogOpen(true);
+                        } : undefined}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell 
+                            key={cell.id}
+                            className={isMobile ? "px-2 py-2" : ""}
+                          >
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </div>
-          <div className="flex w-full items-center gap-8 md:w-fit">
-            <div className="hidden items-center gap-2 md:flex">
-              <Label htmlFor="rows-per-page" className="text-sm font-medium">
-                Rows per page
-              </Label>
-              <Select
-                value={`${pagination.pageSize}`}
-                onValueChange={(value) => {
-                  table.setPageSize(Number(value))
-                }}
-              >
-                <SelectTrigger className="w-20" id="rows-per-page">
-                  <SelectValue placeholder={pagination.pageSize} />
-                </SelectTrigger>
-                <SelectContent side="top">
-                  {[10, 20, 30, 50].map((pageSize) => (
-                    <SelectItem key={pageSize} value={`${pageSize}`}>
-                      {pageSize}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between px-2 sm:px-4">
+            <div className="hidden sm:flex flex-1 text-sm text-muted-foreground">
+              {table.getFilteredSelectedRowModel().rows.length} of {apiPagination.totalItems} application(s) selected.
             </div>
-            <div className="flex w-fit items-center justify-center text-sm font-medium">
-              Page {pagination.pageIndex + 1} of {apiPagination.totalPages || 1}
-            </div>
-            <div className="ml-auto flex items-center gap-2 md:ml-0">
-              <Button
-                variant="outline"
-                className="hidden h-8 w-8 p-0 md:flex"
-                onClick={() => table.setPageIndex(0)}
-                disabled={!table.getCanPreviousPage()}
-              >
-                <span className="sr-only">Go to first page</span>
-                <ChevronsLeftIcon />
-              </Button>
-              <Button
-                variant="outline"
-                className="size-8"
-                size="icon"
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
-              >
-                <span className="sr-only">Go to previous page</span>
-                <ChevronLeftIcon />
-              </Button>
-              <Button
-                variant="outline"
-                className="size-8"
-                size="icon"
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
-              >
-                <span className="sr-only">Go to next page</span>
-                <ChevronRightIcon />
-              </Button>
-              <Button
-                variant="outline"
-                className="hidden size-8 md:flex"
-                size="icon"
-                onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                disabled={!table.getCanNextPage()}
-              >
-                <span className="sr-only">Go to last page</span>
-                <ChevronsRightIcon />
-              </Button>
+            
+            <div className="flex flex-col sm:flex-row w-full sm:w-auto items-center gap-2 sm:gap-6">
+              {!isMobile && (
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="rows-per-page" className="text-sm font-medium">
+                    Rows per page
+                  </Label>
+                  <Select
+                    value={`${pagination.pageSize}`}
+                    onValueChange={(value) => {
+                      table.setPageSize(Number(value))
+                    }}
+                  >
+                    <SelectTrigger className="w-20" id="rows-per-page">
+                      <SelectValue placeholder={pagination.pageSize} />
+                    </SelectTrigger>
+                    <SelectContent side="top">
+                      {[5, 10, 20, 50].map((pageSize) => (
+                        <SelectItem key={pageSize} value={`${pageSize}`}>
+                          {pageSize}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              
+              <div className="flex w-full sm:w-auto items-center justify-between sm:justify-end gap-2">
+                <div className="text-sm font-medium">
+                  Page {pagination.pageIndex + 1} of {apiPagination.totalPages || 1}
+                </div>
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <Button
+                    variant="outline"
+                    className="hidden sm:flex h-8 w-8 p-0"
+                    onClick={() => table.setPageIndex(0)}
+                    disabled={!table.getCanPreviousPage()}
+                  >
+                    <span className="sr-only">Go to first page</span>
+                    <ChevronsLeftIcon />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-8 w-8 p-0"
+                    onClick={() => table.previousPage()}
+                    disabled={!table.getCanPreviousPage()}
+                  >
+                    <span className="sr-only">Go to previous page</span>
+                    <ChevronLeftIcon />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-8 w-8 p-0"
+                    onClick={() => table.nextPage()}
+                    disabled={!table.getCanNextPage()}
+                  >
+                    <span className="sr-only">Go to next page</span>
+                    <ChevronRightIcon />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="hidden sm:flex h-8 w-8 p-0"
+                    onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                    disabled={!table.getCanNextPage()}
+                  >
+                    <span className="sr-only">Go to last page</span>
+                    <ChevronsRightIcon />
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </TabsContent>
-      <TabsContent value="applied" className="flex flex-col px-4 lg:px-6">
-        {/* Using the same table but with different filter */}
-        <div className="relative flex flex-col gap-4 overflow-auto">
-          {/* Table content would be identical to the "all" tab, but filtered */}
+        </TabsContent>
+        
+        <TabsContent value="applied" className="flex flex-col px-4 lg:px-6">
+          {/* Using the same table but with different filter */}
           {/* For simplicity, I'm not duplicating the entire table here */}
           <div className="aspect-video w-full flex-1 rounded-lg border border-dashed flex items-center justify-center">
             <span className="text-muted-foreground">Applied jobs will appear here</span>
           </div>
-        </div>
-      </TabsContent>
-      <TabsContent value="interview" className="flex flex-col px-4 lg:px-6">
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed flex items-center justify-center">
-          <span className="text-muted-foreground">Interview jobs will appear here</span>
-        </div>
-      </TabsContent>
-      <TabsContent value="offer" className="flex flex-col px-4 lg:px-6">
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed flex items-center justify-center">
-          <span className="text-muted-foreground">Offers will appear here</span>
-        </div>
-      </TabsContent>
-    </Tabs>
-    
-    <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
-      <DialogContent className="sm:max-w-[550px]">
-        <DialogHeader>
-          <DialogTitle>{selectedApplication?.title || "Job Details"}</DialogTitle>
-          <DialogDescription>
-            {selectedApplication?.company} • {selectedApplication?.location}
-          </DialogDescription>
-        </DialogHeader>
-        
-        {selectedApplication && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="font-medium text-muted-foreground">Status</p>
-                <Badge variant="outline" className="mt-1 flex w-fit gap-1 px-1.5 text-muted-foreground [&_svg]:size-3">
-                  {getStatusIcon(selectedApplication.status)}
-                  {selectedApplication.status}
-                </Badge>
-              </div>
-              <div>
-                <p className="font-medium text-muted-foreground">Applied On</p>
-                <p className="mt-1">{formatDate(selectedApplication.appliedOn)}</p>
-              </div>
-              <div>
-                <p className="font-medium text-muted-foreground">Posted On</p>
-                <p className="mt-1">{selectedApplication.postedOn}</p>
-              </div>
-              <div>
-                <p className="font-medium text-muted-foreground">Experience Required</p>
-                <p className="mt-1">{selectedApplication.experience}</p>
-              </div>
-              <div>
-                <p className="font-medium text-muted-foreground">Salary Range</p>
-                <p className="mt-1">{selectedApplication.salary}</p>
-              </div>
-              <div>
-                <p className="font-medium text-muted-foreground">Portal</p>
-                <p className="mt-1">{selectedApplication.portal}</p>
-              </div>
-              <div>
-                <p className="font-medium text-muted-foreground">Application ID</p>
-                <p className="mt-1">{selectedApplication.applicationId}</p>
-              </div>
-            </div>
-            
-            <div>
-              <p className="font-medium text-muted-foreground">Description</p>
-              <p className="mt-1 text-sm">{selectedApplication.description}</p>
-            </div>
-            
-            {selectedApplication.skills && selectedApplication.skills.length > 0 && (
-              <div>
-                <p className="font-medium text-muted-foreground">Skills Required</p>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {selectedApplication.skills.map((skill, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
-                      {skill}
-                    </Badge>
-                  ))}
+        </TabsContent>
+        <TabsContent value="interview" className="flex flex-col px-4 lg:px-6">
+          <div className="aspect-video w-full flex-1 rounded-lg border border-dashed flex items-center justify-center">
+            <span className="text-muted-foreground">Interview jobs will appear here</span>
+          </div>
+        </TabsContent>
+        <TabsContent value="offer" className="flex flex-col px-4 lg:px-6">
+          <div className="aspect-video w-full flex-1 rounded-lg border border-dashed flex items-center justify-center">
+            <span className="text-muted-foreground">Offers will appear here</span>
+          </div>
+        </TabsContent>
+      </Tabs>
+      
+      {/* Mobile-friendly application details dialog */}
+      <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+        <DialogContent className={`${isMobile ? 'w-[95%] max-h-[90vh] overflow-y-auto' : 'sm:max-w-[550px]'}`}>
+          <DialogHeader>
+            <DialogTitle className="break-words pr-6">{selectedApplication?.title || "Job Details"}</DialogTitle>
+            <DialogDescription className="break-words">
+              {selectedApplication?.company} • {selectedApplication?.location}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedApplication && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="font-medium text-muted-foreground">Status</p>
+                  <Badge variant="outline" className="mt-1 flex w-fit gap-1 px-1.5 text-muted-foreground [&_svg]:size-3">
+                    {getStatusIcon(selectedApplication.status)}
+                    {selectedApplication.status}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="font-medium text-muted-foreground">Applied On</p>
+                  <p className="mt-1">{formatDate(selectedApplication.appliedOn)}</p>
+                </div>
+                <div>
+                  <p className="font-medium text-muted-foreground">Posted On</p>
+<p className="mt-1">{selectedApplication.postedOn}</p>
+                </div>
+                <div>
+                  <p className="font-medium text-muted-foreground">Experience Required</p>
+                  <p className="mt-1">{selectedApplication.experience}</p>
+                </div>
+                <div>
+                  <p className="font-medium text-muted-foreground">Salary Range</p>
+                  <p className="mt-1">{selectedApplication.salary}</p>
+                </div>
+                <div>
+                  <p className="font-medium text-muted-foreground">Portal</p>
+                  <p className="mt-1">{selectedApplication.portal}</p>
+                </div>
+                <div>
+                  <p className="font-medium text-muted-foreground">Application ID</p>
+                  <p className="mt-1">{selectedApplication.applicationId}</p>
                 </div>
               </div>
-            )}
-            
-            {selectedApplication.notes && (
+              
               <div>
-                <p className="font-medium text-muted-foreground">Notes</p>
-                <p className="mt-1 text-sm">{selectedApplication.notes}</p>
+                <p className="font-medium text-muted-foreground">Description</p>
+                <p className={`mt-1 text-sm ${isMobile ? 'max-h-[200px] overflow-y-auto' : ''}`}>
+                  {selectedApplication.description}
+                </p>
               </div>
-            )}
-          </div>
-        )}
-        
-        <DialogFooter className="flex sm:justify-between">
-          <Button 
-            variant="secondary" 
-            onClick={() => setDetailsDialogOpen(false)}
-          >
-            Close
-          </Button>
-          <Button 
-            variant="default"
-            onClick={() => {
-              if (selectedApplication?.applyLink) {
-                window.open(selectedApplication.applyLink, '_blank', 'noopener,noreferrer');
-              }
-            }}
-            disabled={!selectedApplication?.applyLink}
-          >
-            <span className="mr-2">View Original Listing</span>
-            <ExternalLinkIcon className="h-4 w-4" />
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+              
+              {selectedApplication.skills && selectedApplication.skills.length > 0 && (
+                <div>
+                  <p className="font-medium text-muted-foreground">Skills Required</p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {selectedApplication.skills.map((skill, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs">
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {selectedApplication.notes && (
+                <div>
+                  <p className="font-medium text-muted-foreground">Notes</p>
+                  <p className="mt-1 text-sm">{selectedApplication.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <DialogFooter className={`${isMobile ? 'flex-col space-y-2' : 'sm:justify-between'}`}>
+            <Button 
+              variant="secondary" 
+              onClick={() => setDetailsDialogOpen(false)}
+              className={isMobile ? "w-full" : ""}
+            >
+              Close
+            </Button>
+            <Button 
+              variant="default"
+              onClick={() => {
+                if (selectedApplication?.applyLink) {
+                  window.open(selectedApplication.applyLink, '_blank', 'noopener,noreferrer');
+                }
+              }}
+              disabled={!selectedApplication?.applyLink}
+              className={isMobile ? "w-full" : ""}
+            >
+              <span className="mr-2">View Original Listing</span>
+              <ExternalLinkIcon className="h-4 w-4" />
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
-
   )
 }
