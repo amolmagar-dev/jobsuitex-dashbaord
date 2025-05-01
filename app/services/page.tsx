@@ -128,7 +128,7 @@ export default function AutoJobPage() {
           </CardContent>
           
           <CardFooter className="px-6 py-4 bg-muted/20 border-t flex flex-col sm:flex-row gap-3 sm:justify-end">
-            <Button 
+            {/* <Button 
               variant={isActive ? "outline" : "default"}
               className="flex gap-2 items-center w-full sm:w-auto"
               onClick={handleServiceToggle}
@@ -136,7 +136,7 @@ export default function AutoJobPage() {
             >
               <Power className="h-4 w-4" />
               {isActive ? "Deactivate Service" : "Activate Service"}
-            </Button>
+            </Button> */}
             <Button 
               className="flex gap-2 items-center w-full sm:w-auto"
               onClick={() => setModalOpen(true)}
