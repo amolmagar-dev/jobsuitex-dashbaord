@@ -68,7 +68,7 @@ export function AutoJobApplicationModal({ open, onOpenChange }: AutoJobApplicati
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {currentPortal.charAt(0).toUpperCase() + currentPortal.slice(1)} Job Automation
+            Configure Job Automation
           </DialogTitle>
         </DialogHeader>
 
