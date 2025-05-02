@@ -1,4 +1,3 @@
-// components/auto-job-modal/steps/portal-credentials-step.tsx
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -78,11 +77,11 @@ export default function PortalCredentialsStep({ state }: PortalCredentialsStepPr
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <div className="portal-selector grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+      <div className="portal-selector grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
         {portalData.map((portal) => (
           <div
             key={portal.id}
-            className={`flex items-center p-3 border rounded-lg ${
+            className={`flex items-center p-2 sm:p-3 border rounded-lg text-sm sm:text-base ${
               portal.id === "N" ? "border-primary bg-primary/5" : ""
             } ${!portal.available ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-primary/50"}`}
             onClick={() => {
@@ -91,12 +90,12 @@ export default function PortalCredentialsStep({ state }: PortalCredentialsStepPr
               }
             }}
           >
-            <div className="portal-letter bg-primary/10 text-primary font-semibold w-10 h-10 rounded-full flex items-center justify-center mr-3">
+            <div className="portal-letter bg-primary/10 text-primary font-semibold w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center mr-2 sm:mr-3">
               {portal.id}
             </div>
             <div className="portal-info">
               <div className="font-medium">{portal.name}</div>
-              <div className={`text-xs ${portal.available ? "text-green-600" : "text-muted-foreground"}`}>
+              <div className={`text-[10px] sm:text-xs ${portal.available ? "text-green-600" : "text-muted-foreground"}`}>
                 {portal.status}
               </div>
             </div>
@@ -104,10 +103,10 @@ export default function PortalCredentialsStep({ state }: PortalCredentialsStepPr
         ))}
       </div>
 
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">
-            <User size={16} className="inline mr-2" />
+      <div className="space-y-3 sm:space-y-4">
+        <div className="space-y-1 sm:space-y-2">
+          <Label htmlFor="email" className="text-sm sm:text-base">
+            <User size={14} className="inline mr-2" />
             Username / Email
           </Label>
           <Input
@@ -116,13 +115,13 @@ export default function PortalCredentialsStep({ state }: PortalCredentialsStepPr
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="Enter your Naukri email"
-            className="w-full"
+            className="w-full text-sm sm:text-base h-9 sm:h-10"
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="password">
-            <Lock size={16} className="inline mr-2" />
+        <div className="space-y-1 sm:space-y-2">
+          <Label htmlFor="password" className="text-sm sm:text-base">
+            <Lock size={14} className="inline mr-2" />
             Password
           </Label>
           <div className="relative">
@@ -134,22 +133,22 @@ export default function PortalCredentialsStep({ state }: PortalCredentialsStepPr
               placeholder={
                 credentialsSaved ? "Enter new password only if you want to change it" : "Enter your Naukri password"
               }
-              className="w-full"
+              className="w-full text-sm sm:text-base h-9 sm:h-10"
             />
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 sm:h-7 sm:w-7"
               onClick={() => setShowPassword(!showPassword)}
             >
-              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
               <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
             </Button>
           </div>
           {credentialsSaved && !passwordChanged && (
-            <div className="text-sm flex items-center text-green-600 mt-1">
-              <CheckCircle size={14} className="mr-1" />
+            <div className="text-xs sm:text-sm flex items-center text-green-600 mt-1">
+              <CheckCircle size={12} className="mr-1" />
               <span>Credentials saved</span>
             </div>
           )}
@@ -158,18 +157,18 @@ export default function PortalCredentialsStep({ state }: PortalCredentialsStepPr
         <Button 
           onClick={handleSave} 
           disabled={loading || !username || (!password && !credentialsSaved)}
-          className="w-full mt-2"
+          className="w-full mt-2 text-sm sm:text-base h-9 sm:h-10"
         >
           {loading ? (
-            <RotateCw size={16} className="mr-2 animate-spin" />
+            <RotateCw size={14} className="mr-2 animate-spin" />
           ) : (
-            <Save size={16} className="mr-2" />
+            <Save size={14} className="mr-2" />
           )}
           {getButtonText()}
         </Button>
 
-        <div className="flex items-start mt-4 p-3 text-sm bg-amber-50 border border-amber-200 rounded-md">
-          <AlertCircle size={16} className="text-amber-500 mr-2 shrink-0 mt-0.5" />
+        <div className="flex items-start mt-3 p-2 sm:p-3 text-xs sm:text-sm bg-amber-50 border border-amber-200 rounded-md">
+          <AlertCircle size={14} className="text-amber-500 mr-2 shrink-0 mt-0.5" />
           <p className="text-amber-700">
             For security reasons, use a dedicated email that isn't linked to sensitive accounts. Passwords are encrypted
             during transmission and storage.

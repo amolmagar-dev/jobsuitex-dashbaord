@@ -1,4 +1,3 @@
-// components/auto-job-modal/steps/ReviewStep.tsx
 import React from "react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -36,13 +35,13 @@ export function ReviewStep({ state, goToStep }: ReviewStepProps) {
   } = state;
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-4">
-        <div className="flex items-center justify-between py-3 border-b">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="space-y-3 sm:space-y-4">
+        <div className="flex items-center justify-between py-2 sm:py-3 border-b">
           <div>
-            <h3 className="font-medium">Activate Job Automation</h3>
-            <p className="text-sm text-muted-foreground">
-              When active, the system will automatically apply to jobs based on your schedule
+            <h3 className="font-medium text-sm sm:text-base">Activate Job Automation</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              When active, the system will automatically apply to jobs
             </p>
           </div>
           <Switch checked={isActive} onCheckedChange={(checked) => {
@@ -51,18 +50,18 @@ export function ReviewStep({ state, goToStep }: ReviewStepProps) {
           }} />
         </div>
 
-        <div className="space-y-4 mt-4">
-          <div className="border rounded-md p-4">
-            <div className="flex justify-between items-center mb-3">
-              <div className="flex items-center gap-2">
-                <Briefcase size={18} />
-                <h3 className="font-medium">Portal & Credentials</h3>
+        <div className="space-y-3 sm:space-y-4 mt-2 sm:mt-4">
+          <div className="border rounded-md p-3 sm:p-4">
+            <div className="flex justify-between items-center mb-2 sm:mb-3">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Briefcase size={16} />
+                <h3 className="font-medium text-sm sm:text-base">Portal & Credentials</h3>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => goToStep(1)}>
+              <Button variant="ghost" size="sm" onClick={() => goToStep(1)} className="h-7 sm:h-8 text-xs sm:text-sm">
                 Edit
               </Button>
             </div>
-            <div className="space-y-2 text-sm">
+            <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Job Portal:</span>
                 <span className="capitalize">{selectedPortal}</span>
@@ -75,7 +74,7 @@ export function ReviewStep({ state, goToStep }: ReviewStepProps) {
                 <span className="text-muted-foreground">Status:</span>
                 <Badge
                   variant={credentialsSaved ? "default" : "outline"}
-                  className={credentialsSaved ? "bg-green-100 text-green-800 hover:bg-green-100" : ""}
+                  className={`text-xs ${credentialsSaved ? "bg-green-100 text-green-800 hover:bg-green-100" : ""}`}
                 >
                   {credentialsSaved ? "Verified" : "Not Verified"}
                 </Badge>
@@ -83,20 +82,20 @@ export function ReviewStep({ state, goToStep }: ReviewStepProps) {
             </div>
           </div>
 
-          <div className="border rounded-md p-4">
-            <div className="flex justify-between items-center mb-3">
-              <div className="flex items-center gap-2">
-                <Settings size={18} />
-                <h3 className="font-medium">Search Criteria</h3>
+          <div className="border rounded-md p-3 sm:p-4">
+            <div className="flex justify-between items-center mb-2 sm:mb-3">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Settings size={16} />
+                <h3 className="font-medium text-sm sm:text-base">Search Criteria</h3>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => goToStep(2)}>
+              <Button variant="ghost" size="sm" onClick={() => goToStep(3)} className="h-7 sm:h-8 text-xs sm:text-sm">
                 Edit
               </Button>
             </div>
-            <div className="space-y-2 text-sm">
+            <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Keywords:</span>
-                <span>{jobKeywords}</span>
+                <span className="text-right max-w-[60%] truncate">{jobKeywords}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Location:</span>
@@ -121,17 +120,17 @@ export function ReviewStep({ state, goToStep }: ReviewStepProps) {
             </div>
           </div>
 
-          <div className="border rounded-md p-4">
-            <div className="flex justify-between items-center mb-3">
-              <div className="flex items-center gap-2">
-                <Calendar size={18} />
-                <h3 className="font-medium">Schedule</h3>
+          <div className="border rounded-md p-3 sm:p-4">
+            <div className="flex justify-between items-center mb-2 sm:mb-3">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Calendar size={16} />
+                <h3 className="font-medium text-sm sm:text-base">Schedule</h3>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => goToStep(4)}>
+              <Button variant="ghost" size="sm" onClick={() => goToStep(4)} className="h-7 sm:h-8 text-xs sm:text-sm">
                 Edit
               </Button>
             </div>
-            <div className="space-y-2 text-sm">
+            <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Frequency:</span>
                 <span className="capitalize">{applyFrequency}</span>
@@ -151,34 +150,34 @@ export function ReviewStep({ state, goToStep }: ReviewStepProps) {
               {(applyFrequency === "weekly" || applyFrequency === "custom") && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Days:</span>
-                  <span>
+                  <span className="text-right max-w-[60%] truncate">
                     {applyDays.map((day: number) => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][day]).join(", ")}
                   </span>
                 </div>
               )}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Next Run:</span>
-                <span className="font-medium text-primary">{getNextRunTime()}</span>
+                <span className="font-medium text-primary text-right max-w-[60%] truncate">{getNextRunTime()}</span>
               </div>
             </div>
           </div>
 
-          <div className="border rounded-md p-4">
-            <div className="flex justify-between items-center mb-3">
-              <div className="flex items-center gap-2">
-                <Bell size={18} />
-                <h3 className="font-medium">Notifications</h3>
+          <div className="border rounded-md p-3 sm:p-4">
+            <div className="flex justify-between items-center mb-2 sm:mb-3">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Bell size={16} />
+                <h3 className="font-medium text-sm sm:text-base">Notifications</h3>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => goToStep(5)}>
+              <Button variant="ghost" size="sm" onClick={() => goToStep(5)} className="h-7 sm:h-8 text-xs sm:text-sm">
                 Edit
               </Button>
             </div>
-            <div className="space-y-2 text-sm">
+            <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Email Notifications:</span>
                 <Badge
                   variant={emailNotifications ? "default" : "outline"}
-                  className={emailNotifications ? "bg-green-100 text-green-800 hover:bg-green-100" : ""}
+                  className={`text-xs ${emailNotifications ? "bg-green-100 text-green-800 hover:bg-green-100" : ""}`}
                 >
                   {emailNotifications ? "Enabled" : "Disabled"}
                 </Badge>
@@ -187,7 +186,7 @@ export function ReviewStep({ state, goToStep }: ReviewStepProps) {
                 <span className="text-muted-foreground">WhatsApp Notifications:</span>
                 <Badge
                   variant={whatsappNotifications ? "default" : "outline"}
-                  className={whatsappNotifications ? "bg-green-100 text-green-800 hover:bg-green-100" : ""}
+                  className={`text-xs ${whatsappNotifications ? "bg-green-100 text-green-800 hover:bg-green-100" : ""}`}
                 >
                   {whatsappNotifications ? "Enabled" : "Disabled"}
                 </Badge>
@@ -196,16 +195,16 @@ export function ReviewStep({ state, goToStep }: ReviewStepProps) {
           </div>
         </div>
 
-        <div className="pt-4">
+        <div className="pt-2 sm:pt-4">
           <Button 
             onClick={runNow} 
             disabled={loading || !credentialsSaved} 
-            className="w-full"
+            className="w-full h-9 sm:h-10 text-xs sm:text-sm"
           >
             {loading ? (
-              <RotateCw size={16} className="mr-2 animate-spin" />
+              <RotateCw size={14} className="mr-2 animate-spin" />
             ) : (
-              <PlayCircle size={16} className="mr-2" />
+              <PlayCircle size={14} className="mr-2" />
             )}
             Run Now for {selectedPortal.charAt(0).toUpperCase() + selectedPortal.slice(1)}
           </Button>

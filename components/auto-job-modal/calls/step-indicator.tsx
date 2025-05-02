@@ -1,4 +1,3 @@
-// components/auto-job-modal/StepIndicator.tsx
 import React from "react";
 import { Check } from "lucide-react";
 
@@ -14,18 +13,18 @@ interface StepIndicatorProps {
 
 export function StepIndicator({ steps, currentStep, goToStep }: StepIndicatorProps) {
   return (
-    <div className="flex items-center justify-center mb-6 px-2">
-      <div className="w-full flex items-center">
+    <div className="flex items-center justify-center mb-4 sm:mb-6 px-0 sm:px-2 overflow-x-auto">
+      <div className="w-full flex items-center min-w-max">
         {steps.map((step) => (
           <React.Fragment key={step.id}>
             <div
               className={`flex flex-col items-center ${
                 step.id <= currentStep ? "cursor-pointer" : "cursor-not-allowed"
               }`}
-              onClick={() => goToStep(step.id)}
+              onClick={() => step.id <= currentStep && goToStep(step.id)}
             >
               <div
-                className={`rounded-full flex items-center justify-center w-8 h-8 text-sm font-medium
+                className={`rounded-full flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 text-xs sm:text-sm font-medium
                   ${
                     step.id < currentStep
                       ? "bg-primary text-primary-foreground"
@@ -34,10 +33,10 @@ export function StepIndicator({ steps, currentStep, goToStep }: StepIndicatorPro
                       : "bg-muted text-muted-foreground"
                   }`}
               >
-                {step.id < currentStep ? <Check size={16} /> : step.id}
+                {step.id < currentStep ? <Check size={14} /> : step.id}
               </div>
               <span
-                className={`text-xs mt-1 text-center ${
+                className={`text-[10px] sm:text-xs mt-1 text-center w-12 sm:w-auto ${
                   step.id === currentStep ? "font-medium" : "text-muted-foreground"
                 }`}
               >

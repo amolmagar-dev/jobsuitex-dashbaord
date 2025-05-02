@@ -1,4 +1,3 @@
-// components/auto-job-modal/index.tsx
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -35,12 +34,12 @@ export function AutoJobApplicationModal({ open, onOpenChange }: AutoJobApplicati
 
   // Steps configuration
   const steps = [
-    { id: 1, title: "Portal Credentials", icon: null },
-    { id: 2, title: "AI Training", icon: null },
-    { id: 3, title: "Search Criteria", icon: null },
+    { id: 1, title: "Portal", icon: null },
+    { id: 2, title: "AI", icon: null },
+    { id: 3, title: "Search", icon: null },
     { id: 4, title: "Schedule", icon: null },
-    { id: 5, title: "Notifications", icon: null },
-    { id: 6, title: "Review & Execute", icon: null },
+    { id: 5, title: "Alerts", icon: null },
+    { id: 6, title: "Review", icon: null },
   ];
   
   // Main step content selector
@@ -65,17 +64,17 @@ export function AutoJobApplicationModal({ open, onOpenChange }: AutoJobApplicati
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-xl md:max-w-2xl lg:max-w-3xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="text-lg sm:text-xl">
             Configure Job Automation
           </DialogTitle>
         </DialogHeader>
 
-        {/* Portal selector - visible in step 1 */}
-
-        {/* Step Indicator */}
-        <StepIndicator steps={steps} currentStep={currentStep} goToStep={goToStep} />
+        {/* Step Indicator - Responsive with shorter titles on mobile */}
+        <div className="pt-2">
+          <StepIndicator steps={steps} currentStep={currentStep} goToStep={goToStep} />
+        </div>
 
         {/* Step Content */}
         <div className="py-2">{renderStepContent()}</div>
@@ -87,25 +86,25 @@ export function AutoJobApplicationModal({ open, onOpenChange }: AutoJobApplicati
           </div>
         )}
 
-        {/* Navigation Buttons */}
-        <DialogFooter className="flex justify-between sm:justify-between">
+        {/* Navigation Buttons - Responsive layout */}
+        <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 sm:gap-0 mt-4">
           {currentStep > 1 ? (
-            <Button variant="outline" onClick={prevStep} className="mr-auto">
+            <Button variant="outline" onClick={prevStep} className="w-full sm:w-auto">
               <ChevronLeft size={16} className="mr-2" />
               Previous
             </Button>
           ) : (
-            <div />
+            <div className="hidden sm:block" />
           )}
 
           {currentStep < steps.length ? (
-            <Button onClick={nextStep}>
+            <Button onClick={nextStep} className="w-full sm:w-auto">
               {currentStep === steps.length - 1 ? "Review" : "Continue"}
               <ChevronRight size={16} className="ml-2" />
             </Button>
           ) : (
             <DialogClose asChild>
-              <Button variant="outline">Close</Button>
+              <Button variant="outline" className="w-full sm:w-auto">Close</Button>
             </DialogClose>
           )}
         </DialogFooter>
