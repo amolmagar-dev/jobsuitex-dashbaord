@@ -2,7 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { RotateCw, Save, Download, CheckCircle, AlertCircle, Brain } from "lucide-react";
+import { RotateCw, Save, Sparkles, CheckCircle, AlertCircle, Brain } from "lucide-react";
 
 interface AITrainingStepProps {
   state: {
@@ -63,7 +63,7 @@ export function AITrainingStep({ state }: AITrainingStepProps) {
               </>
             ) : (
               <>
-                <Download size={16} className="mr-2" />
+                <Sparkles size={16} className="mr-2" />
                 Generate from Your Profile
               </>
             )}
