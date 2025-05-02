@@ -56,7 +56,7 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
 
 export function ChartAreaInteractive() {
   const isMobile = useIsMobile()
-  const [timeRange, setTimeRange] = React.useState("90d")
+  const [timeRange, setTimeRange] = React.useState("7d")
   const [chartData, setChartData] = React.useState([])
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
@@ -64,7 +64,7 @@ export function ChartAreaInteractive() {
   // Effect to handle mobile view
   React.useEffect(() => {
     if (isMobile) {
-      setTimeRange("30d")
+      setTimeRange("7d")
     }
   }, [isMobile])
 
