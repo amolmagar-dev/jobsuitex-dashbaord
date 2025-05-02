@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import { GeminiBot } from '../../ai/GeminiBot.js';
-import { notifyAll } from '../../../notifier/index.js';
+// import { notifyAll } from '../../../../notifier/index.js';
 
 dotenv.config();
 
@@ -241,7 +241,7 @@ export class NaukriJobAutomation {
 
                     if (success) {
                         console.log(`📣 Creating notification for job: ${job.title}`);
-                        notifyAll(this.createNotification(job));
+                        // notifyAll(this.createNotification(job));
                         console.log(`✅ ${success}`);
 
                         // Save successful application to MongoDB
@@ -273,7 +273,7 @@ export class NaukriJobAutomation {
 
                     if (success) {
                         console.log(`📣 Creating notification for job: ${job.title}`);
-                        notifyAll(this.createNotification(job));
+                        // notifyAll(this.createNotification(job));
                         console.log(`✅ ${success}`);
 
                         // Save successful application to MongoDB

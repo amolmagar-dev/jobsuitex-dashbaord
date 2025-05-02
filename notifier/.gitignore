@@ -1,0 +1,13 @@
+node_modules/
+# .env
+logs/
+data/
+
+# whatapps ingores files
+.wwebjs*
+
+# user personal data 
+user-data*
+
+# cache
+cache*
