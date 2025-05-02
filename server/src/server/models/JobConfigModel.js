@@ -52,6 +52,7 @@ export const jobConfigSchema = {
     notifications: {
         email: { type: 'boolean', default: true },
         whatsapp: { type: 'boolean', default: false },
+        mobileNumber: { type: 'string' }, // Add this line for the mobile number
         notifyAbout: {
             applications: { type: 'boolean', default: true },
             interviews: { type: 'boolean', default: true },
@@ -246,6 +247,8 @@ export const JobConfigModel = {
         // Update notification settings if provided
         if (updateData.emailNotifications !== undefined) updates['notifications.email'] = updateData.emailNotifications;
         if (updateData.whatsappNotifications !== undefined) updates['notifications.whatsapp'] = updateData.whatsappNotifications;
+        if (updateData.mobileNumber !== undefined) updates['notifications.mobileNumber'] = updateData.mobileNumber; // Add this line
+
 
         // Update AI training if provided
         if (updateData.selfDescription) {

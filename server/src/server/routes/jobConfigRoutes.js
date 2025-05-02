@@ -338,6 +338,7 @@ export default async function jobConfigRoutes(fastify, options) {
       const updates = {};
       if (notificationsData.email !== undefined) updates['notifications.email'] = notificationsData.email;
       if (notificationsData.whatsapp !== undefined) updates['notifications.whatsapp'] = notificationsData.whatsapp;
+      if (notificationsData.mobileNumber !== undefined) updates['notifications.mobileNumber'] = notificationsData.mobileNumber; // Add this line
 
       if (notificationsData.notifyAbout) {
         if (notificationsData.notifyAbout.applications !== undefined) {

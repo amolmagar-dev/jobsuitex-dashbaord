@@ -1,3 +1,4 @@
+// services/jobConfigService.js
 import api from "./service";
 
 // API service for job configurations
@@ -11,7 +12,7 @@ const jobConfigService = {
       throw error;
     }
   },
-  
+
   // Get just the status of the job configuration
   getStatus: async () => {
     try {
@@ -21,7 +22,7 @@ const jobConfigService = {
       throw error;
     }
   },
-  
+
   // Create or update the job configuration
   saveConfig: async (configData) => {
     try {
@@ -31,7 +32,7 @@ const jobConfigService = {
       throw error;
     }
   },
-  
+
   // Update a specific portal's configuration
   updatePortalConfig: async (portalType, portalData) => {
     try {
@@ -41,7 +42,7 @@ const jobConfigService = {
       throw error;
     }
   },
-  
+
   // Delete a portal from the job config
   deletePortal: async (portalType) => {
     try {
@@ -51,7 +52,7 @@ const jobConfigService = {
       throw error;
     }
   },
-  
+
   // Toggle the job config's active status
   toggleActive: async () => {
     try {
@@ -61,7 +62,7 @@ const jobConfigService = {
       throw error;
     }
   },
-  
+
   // Update schedule settings
   updateSchedule: async (scheduleData) => {
     try {
@@ -71,7 +72,7 @@ const jobConfigService = {
       throw error;
     }
   },
-  
+
   // Save AI training data
   saveAITraining: async (trainingData) => {
     try {
@@ -81,17 +82,22 @@ const jobConfigService = {
       throw error;
     }
   },
-  
-  // Update notification settings
+
+  // Update notification settings including mobile number
   updateNotifications: async (notificationData) => {
     try {
+      // Validate mobile number if WhatsApp is enabled
+      if (notificationData.whatsapp && !notificationData.mobileNumber) {
+        throw new Error('Mobile number is required for WhatsApp notifications');
+      }
+
       const response = await api.put('/job-config/notifications', notificationData);
       return response.data;
     } catch (error) {
       throw error;
     }
   },
-  
+
   // Run job config immediately (optionally for a specific portal)
   runConfig: async (portalType = null) => {
     try {
@@ -102,7 +108,7 @@ const jobConfigService = {
       throw error;
     }
   },
-  
+
   // Analyze user profile
   analyzeProfile: async (portal) => {
     try {

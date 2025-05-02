@@ -45,6 +45,7 @@ export function useJobConfig(isOpen: boolean) {
   // Step 5: Notification state
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [whatsappNotifications, setWhatsappNotifications] = useState(false);
+  const [mobileNumber, setMobileNumber] = useState(""); // Add mobile number state
 
   // Portal data
   const portalData = [
@@ -105,10 +106,11 @@ export function useJobConfig(isOpen: boolean) {
           setApplyHourlyInterval(response.config.schedule.hourlyInterval || 1);
         }
         
-        // Load notification settings
+        // Load notification settings including mobile number
         if (response.config.notifications) {
           setEmailNotifications(response.config.notifications.email !== undefined ? response.config.notifications.email : true);
           setWhatsappNotifications(response.config.notifications.whatsapp || false);
+          setMobileNumber(response.config.notifications.mobileNumber || ""); // Add this line
         }
         
         // Load portal-specific config for the currently selected portal
@@ -169,6 +171,7 @@ export function useJobConfig(isOpen: boolean) {
     setApplyHourlyInterval(1);
     setEmailNotifications(true);
     setWhatsappNotifications(false);
+    setMobileNumber(""); // Reset mobile number
   };
 
   // Step 1: Portal Credentials API Functions
@@ -410,36 +413,64 @@ export function useJobConfig(isOpen: boolean) {
 
   // Step 5: Save Notification Settings
   const saveNotifications = async () => {
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      const notificationData = {
-        email: emailNotifications,
-        whatsapp: whatsappNotifications,
-        notifyAbout: {
-          applications: true, // Default value
-          interviews: true,   // Default value
-          errors: true        // Default value
-        }
-      };
-
-      const response = await jobConfigService.updateNotifications(notificationData);
-
-      if (response && response.success) {
-        toast.success("Notification settings saved");
-        return true;
-      } else {
-        toast.error("Failed to save notification settings");
+    // Validate mobile number if WhatsApp notifications are enabled
+    if (whatsappNotifications) {
+      if (!mobileNumber) {
+        toast.error("Please provide a WhatsApp number for notifications");
         return false;
       }
-    } catch (error) {
-      console.error("Error saving notifications:", error);
+      
+      // Basic validation for mobile number (should be all digits)
+      if (!/^\d+$/.test(mobileNumber)) {
+        toast.error("Mobile number should contain only digits");
+        return false;
+      }
+      
+      // Check length (should be at least 10 digits including country code)
+      if (mobileNumber.length < 10) {
+        toast.error("Mobile number appears to be too short");
+        return false;
+      }
+      
+      // Check if it's too long (most numbers with country code shouldn't exceed 15 digits)
+      if (mobileNumber.length > 15) {
+        toast.error("Mobile number appears to be too long");
+        return false;
+      }
+    }
+
+    const notificationData = {
+      email: emailNotifications,
+      whatsapp: whatsappNotifications,
+      mobileNumber: mobileNumber, // This will be stored without the '+' symbol
+      notifyAbout: {
+        applications: true, // Default value
+        interviews: true,   // Default value
+        errors: true        // Default value
+      }
+    };
+
+    const response = await jobConfigService.updateNotifications(notificationData);
+
+    if (response && response.success) {
+      toast.success("Notification settings saved");
+      return true;
+    } else {
       toast.error("Failed to save notification settings");
       return false;
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (error) {
+    console.error("Error saving notifications:", error);
+    toast.error("Failed to save notification settings");
+    return false;
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // Toggle Job Config Active Status
   const toggleActiveStatus = async () => {
@@ -496,12 +527,12 @@ export function useJobConfig(isOpen: boolean) {
           }
         }
 
-                // Save step 3: AI training
+        // Save step 2: AI training
         if (currentStep === 2 && selfDescription.trim()) {
           isValid = (await saveAITraining()) ?? false;
         }
         
-        // Validate and save step 2: Search criteria
+        // Validate and save step 3: Search criteria
         if (currentStep === 3) {
           if (!jobKeywords || !jobLocation) {
             toast.error("Job keywords and location are required");
@@ -519,7 +550,13 @@ export function useJobConfig(isOpen: boolean) {
         
         // Save step 5: Notifications
         if (currentStep === 5) {
-          isValid = await saveNotifications();
+          // Check if WhatsApp is enabled but no mobile number is provided
+          if (whatsappNotifications && !mobileNumber) {
+            toast.error("Please provide a WhatsApp number for notifications");
+            isValid = false;
+          } else {
+            isValid = await saveNotifications();
+          }
         }
         
         if (isValid) {
@@ -648,6 +685,8 @@ export function useJobConfig(isOpen: boolean) {
     setEmailNotifications,
     whatsappNotifications,
     setWhatsappNotifications,
+    mobileNumber,       // Add mobile number
+    setMobileNumber,    // Add setter for mobile number
     saveNotifications,
 
     // Step 6: Review & Execute
