@@ -495,9 +495,14 @@ export function useJobConfig(isOpen: boolean) {
             isValid = false;
           }
         }
+
+                // Save step 3: AI training
+        if (currentStep === 2 && selfDescription.trim()) {
+          isValid = (await saveAITraining()) ?? false;
+        }
         
         // Validate and save step 2: Search criteria
-        if (currentStep === 2) {
+        if (currentStep === 3) {
           if (!jobKeywords || !jobLocation) {
             toast.error("Job keywords and location are required");
             isValid = false;
@@ -505,11 +510,6 @@ export function useJobConfig(isOpen: boolean) {
             // Save portal configuration
             isValid = (await savePortalConfig()) ?? false;
           }
-        }
-        
-        // Save step 3: AI training
-        if (currentStep === 3 && selfDescription.trim()) {
-          isValid = (await saveAITraining()) ?? false;
         }
         
         // Save step 4: Schedule

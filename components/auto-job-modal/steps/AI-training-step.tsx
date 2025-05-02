@@ -13,7 +13,7 @@ interface AITrainingStepProps {
     saveAITraining: () => void;
     credentialsSaved: boolean;
     loading: boolean;
-  };
+  };  
 }
 
 export function AITrainingStep({ state }: AITrainingStepProps) {
