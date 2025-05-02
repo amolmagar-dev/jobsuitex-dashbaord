@@ -2,7 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { RotateCw, Save, Sparkles, CheckCircle, AlertCircle, Brain } from "lucide-react";
+import { RotateCw, Save, Sparkles, CheckCircle, AlertCircle } from "lucide-react";
 
 interface AITrainingStepProps {
   state: {
@@ -81,7 +81,7 @@ export function AITrainingStep({ state }: AITrainingStepProps) {
 
         <div className="mt-6 border rounded-lg p-4">
           <div className="flex items-center gap-2 mb-3">
-            <Brain size={18} />
+            <Sparkles size={18} />
             <h3 className="font-medium">What the AI Can Do</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
