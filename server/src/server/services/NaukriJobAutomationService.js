@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import { GeminiBot } from '../../ai/GeminiBot.js';
 // import { notifyAll } from '../../../../notifier/index.js';
+import axios from 'axios';
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ export class NaukriJobAutomation {
         };
         this.maxPagesToScrape = parseInt(process.env.SCRAPE_PAGES || "5");
         this.sortBy = process.env.JOB_SHORT_BY || "Date";
+        this.notificationServiceUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:10113';
     }
 
     async loginToNaukri(page) {
@@ -96,12 +98,12 @@ export class NaukriJobAutomation {
 
             // Skills match
             const skills = job.skills.map(s => s.toLowerCase());
-            
+
 
             const skillMatch = prefs.requiredSkills.some(skill =>
-              skills.some(s => s.includes(skill.toLowerCase()))
-             );
-          
+                skills.some(s => s.includes(skill.toLowerCase()))
+            );
+
 
             // Rating match
             const ratingMatch = (() => {
@@ -116,7 +118,7 @@ export class NaukriJobAutomation {
                 )
                 : false;
 
-            return  skillMatch ;
+            return skillMatch;
         });
     }
 
@@ -185,115 +187,112 @@ export class NaukriJobAutomation {
     }
 
     async applyForJobs(jobs) {
-        console.log(`🔄 Starting to apply for ${jobs.length} jobs`);
-        const appliedJobs = [];
+        const page = await this.browser.newPage();
+        try {
+            // await this.loginToNaukri(page);`
 
-        for (const job of jobs) {
-            console.log(`\n==================================`);
-            console.log(`💼 Applying to: ${job.title} | ${job.company} Skills: ${job?.skills}`);
-            console.log(`🔗 Apply link: ${job.applyLink}`);
+            for (const job of jobs) {
+                try {
+                    console.log(`\n==================================`);
+                    console.log(`💼 Applying to: ${job.title} | ${job.company} Skills: ${job?.skills}`);
+                    console.log(`🔗 Apply link: ${job.applyLink}`);
 
-            const jobPage = await this.browser.newPage();
-            console.log(`📄 New page created for job application`);
+                    console.log(`🌐 Navigating to application URL...`);
+                    await page.goto(job.applyLink, { waitUntil: 'networkidle2' });
+                    console.log(`✅ Page loaded successfully`);
 
-            try {
-                console.log(`🌐 Navigating to application URL...`);
-                await jobPage.goto(job.applyLink, { waitUntil: 'networkidle2' });
-                console.log(`✅ Page loaded successfully`);
+                    console.log(`🔍 Looking for apply button...`);
+                    const applyButtonExists = await page.$('.apply-button') !== null;
+                    console.log(`🔍 Apply button exists: ${applyButtonExists}`);
 
-                console.log(`🔍 Looking for apply button...`);
-                const applyButtonExists = await jobPage.$('.apply-button') !== null;
-                console.log(`🔍 Apply button exists: ${applyButtonExists}`);
+                    await page.waitForSelector('.apply-button', { timeout: 5000 });
+                    console.log(`✅ Apply button found`);
 
-                await jobPage.waitForSelector('.apply-button', { timeout: 5000 });
-                console.log(`✅ Apply button found`);
+                    await page.click('.apply-button');
+                    console.log(`👆 Clicked on apply button`);
 
-                await jobPage.click('.apply-button');
-                console.log(`👆 Clicked on apply button`);
-
-                console.log(`⏳ Waiting for 3 seconds...`);
-                await new Promise(resolve => setTimeout(resolve, 3000));
-                console.log(`✅ Finished waiting`);
-
-                console.log(`🔍 Checking for chatbot drawer...`);
-                const chatDrawer = await jobPage.$('.chatbot_DrawerContentWrapper');
-                console.log(`🔍 Chatbot drawer exists: ${chatDrawer !== null}`);
-
-                if (chatDrawer) {
-                    console.log("💬 Chatbot detected, starting chat form handling...");
-                    let appliedJobPage = await this.handleChatForm(jobPage);
-                    console.log(`✅ Returned from handleChatForm function`);
-
-                    console.log(`🔍 Checking for success message...`);
-                    const success = await appliedJobPage.evaluate(() => {
-                        const elements = Array.from(document.querySelectorAll('body *'));
-                        console.log(`Found ${elements.length} elements to search through`);
-
-                        const msg = elements.find(el => {
-                            const text = el.innerText || '';
-                            return text.includes('You have successfully applied to');
-                        });
-
-                        return msg?.innerText || null;
-                    });
-
-                    console.log(`🔍 Success message found: ${success !== null}`);
-
-                    if (success) {
-                        console.log(`📣 Creating notification for job: ${job.title}`);
-                        // notifyAll(this.createNotification(job));
-                        console.log(`✅ ${success}`);
-
-                        // Save successful application to MongoDB
-                        await this.saveJobApplication(job);
-                        appliedJobs.push(job);
-                    } else {
-                        console.log(`⚠️ No success message found after chatbot interaction`);
-                    }
-                } else {
-                    console.log(`💬 No chatbot found, checking for direct success message...`);
-                    console.log(`⏳ Waiting for 4 seconds for page to update...`);
-                    await new Promise(resolve => setTimeout(resolve, 4000));
+                    console.log(`⏳ Waiting for 3 seconds...`);
+                    await new Promise(resolve => setTimeout(resolve, 3000));
                     console.log(`✅ Finished waiting`);
 
-                    console.log(`🔍 Checking for success message on regular page...`);
-                    const success = await jobPage.evaluate(() => {
-                        const elements = Array.from(document.querySelectorAll('body *'));
-                        console.log(`Found ${elements.length} elements to search through`);
+                    console.log(`🔍 Checking for chatbot drawer...`);
+                    const chatDrawer = await page.$('.chatbot_DrawerContentWrapper');
+                    console.log(`🔍 Chatbot drawer exists: ${chatDrawer !== null}`);
 
-                        const msg = elements.find(el => {
-                            const text = el.innerText || '';
-                            return text.includes('You have successfully applied to');
+                    if (chatDrawer) {
+                        console.log("💬 Chatbot detected, starting chat form handling...");
+                        let appliedJobPage = await this.handleChatForm(page);
+                        console.log(`✅ Returned from handleChatForm function`);
+
+                        console.log(`🔍 Checking for success message...`);
+                        const success = await appliedJobPage.evaluate(() => {
+                            const elements = Array.from(document.querySelectorAll('body *'));
+                            console.log(`Found ${elements.length} elements to search through`);
+
+                            const msg = elements.find(el => {
+                                const text = el.innerText || '';
+                                return text.includes('You have successfully applied to');
+                            });
+
+                            return msg?.innerText || null;
                         });
 
-                        return msg?.innerText || null;
-                    });
+                        console.log(`🔍 Success message found: ${success !== null}`);
 
-                    console.log(`🔍 Success message found: ${success !== null}`);
+                        if (success) {
+                            console.log(`📣 Creating notification for job: ${job.title}`);
+                            // notifyAll(this.createNotification(job));
+                            console.log(`✅ ${success}`);
 
-                    if (success) {
-                        console.log(`📣 Creating notification for job: ${job.title}`);
-                        // notifyAll(this.createNotification(job));
-                        console.log(`✅ ${success}`);
+                            // Save successful application to MongoDB
+                            await this.saveJobApplication(job);
+                        } else {
+                            console.log(`⚠️ No success message found after chatbot interaction`);
+                        }
+                    } else {
+                        console.log(`💬 No chatbot found, checking for direct success message...`);
+                        console.log(`⏳ Waiting for 4 seconds for page to update...`);
+                        await new Promise(resolve => setTimeout(resolve, 4000));
+                        console.log(`✅ Finished waiting`);
 
-                        // Save successful application to MongoDB
-                        await this.saveJobApplication(job);
-                        appliedJobs.push(job);
+                        console.log(`🔍 Checking for success message on regular page...`);
+                        const success = await page.evaluate(() => {
+                            const elements = Array.from(document.querySelectorAll('body *'));
+                            console.log(`Found ${elements.length} elements to search through`);
+
+                            const msg = elements.find(el => {
+                                const text = el.innerText || '';
+                                return text.includes('You have successfully applied to');
+                            });
+
+                            return msg?.innerText || null;
+                        });
+
+                        console.log(`🔍 Success message found: ${success !== null}`);
+
+                        if (success) {
+                            console.log(`📣 Creating notification for job: ${job.title}`);
+                            // notifyAll(this.createNotification(job));
+                            console.log(`✅ ${success}`);
+
+                            // Save successful application to MongoDB
+                            await this.saveJobApplication(job);
+                        }
+                        else console.log("🤷 Unknown apply result - no success message detected");
                     }
-                    else console.log("🤷 Unknown apply result - no success message detected");
+
+                    // Send success notification
+                    this.createNotification(job);
+                } catch (error) {
+                    console.error(`Failed to apply for job: ${job.title} at ${job.company}`, error);
+
+                    // Send error notification
+                    await this.sendErrorNotification(job, error.message);
                 }
-
-            } catch (err) {
-                console.log(`❌ Couldn't apply: ${err.message}`);
-                console.log(`📚 Error stack: ${err.stack}`);
             }
-
-            console.log(`🔒 Closing job page`);
-            await jobPage.close();
-            console.log(`✅ Job page closed`);
+        } finally {
+            await page.close();
         }
-        console.log(`🏁 Finished applying to all jobs. Successfully applied to ${appliedJobs.length} jobs.`);
-        return appliedJobs;
     }
 
     async saveJobApplication(job) {
@@ -522,26 +521,71 @@ export class NaukriJobAutomation {
         }
     }
 
+    async sendNotification(message, channels = ['email', 'whatsapp']) {
+        try {
+            const recipients = {};
+
+            // Add email recipient if email notifications are enabled
+            if (channels.includes('email') && this.jobConfig.notifications?.email) {
+                recipients.email = this.user.email;
+            }
+
+            // Add WhatsApp recipient if WhatsApp notifications are enabled
+            if (channels.includes('whatsapp') && this.jobConfig.notifications?.whatsapp && this.jobConfig.notifications?.mobileNumber) {
+                recipients.whatsapp = this.jobConfig.notifications.mobileNumber;
+            }
+
+            // Only send if we have at least one recipient
+            if (Object.keys(recipients).length > 0) {
+                const response = await axios.post(`${this.notificationServiceUrl}/api/notify`, {
+                    message,
+                    recipients,
+                    channels
+                });
+
+                if (response.data.success) {
+                    console.log('Notification sent successfully');
+                } else {
+                    console.error('Failed to send notification:', response.data);
+                }
+            }
+        } catch (error) {
+            console.error('Error sending notification:', error.message);
+        }
+    }
+
     createNotification(job) {
-        return `📢 *Job Applied Successfully!*
+        const notificationMessage = `✅ *Job Applied Successfully*
 
-🔹 *Position:* ${job.title}
-🏢 *Company:* ${job.company}
-📍 *Location:* ${job.location || 'N/A'}
-🧠 *Experience:* ${job.experience || 'N/A'}
-💰 *Salary:* ${job.salary || 'N/A'}
-⭐ *Rating:* ${job.rating || 'N/A'} (${job.reviews || 'No'} reviews)
-📅 *Posted On:* ${job.postedOn || 'N/A'}
-🌐 *Portal:* Naukri
-👤 *User:* ${this.user.firstName} ${this.user.lastName}
-
-📝 *Description:* ${job.description || 'No description available'}
+🔹 *${job.title}*
+🏢 ${job.company}
+📍 ${job.location || 'N/A'}
+💰 ${job.salary || 'N/A'}
+⭐ ${job.rating || 'N/A'} (${job.reviews || 'No'} reviews)
 
 🛠️ *Skills:* ${job.skills && job.skills.length ? job.skills.join(', ') : 'N/A'}
 
-🔗 *Apply Link:* ${job.applyLink || 'N/A'}
+🔗 *Apply Link:* ${job.applyLink || 'N/A'}`;
 
-🟢 Please wait while we track the application status.`;
+        // Send notification using the new method
+        this.sendNotification(notificationMessage);
+
+        return notificationMessage;
+    }
+
+    async sendErrorNotification(job, errorMessage) {
+        const errorNotification = `❌ *Job Application Failed*
+
+🔹 *${job.title}*
+🏢 ${job.company}
+📍 ${job.location || 'N/A'}
+
+⚠️ An error occurred. Please apply for this job manually.
+
+🔗 *Apply Link:* ${job.applyLink || 'N/A'}`;
+
+        // Send error notification
+        await this.sendNotification(errorNotification, ['email', 'whatsapp']);
     }
 
     async start() {
