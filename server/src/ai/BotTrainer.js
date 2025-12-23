@@ -22,7 +22,7 @@ export async function PepareAndTrainBot() {
 
   const resumePath = path.join(userDataDir, pdf);
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: 'models/gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'models/gemini-2.5-flash-lite' });
 
   console.log('📄 Generating system instruction from:', resumePath);
   const result = await model.generateContent([

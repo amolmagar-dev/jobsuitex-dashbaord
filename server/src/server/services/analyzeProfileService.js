@@ -156,7 +156,7 @@ async function analyzeResumeWithGemini(pdfBuffer) {
 
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
-            model: 'models/gemini-1.5-flash',
+            model: 'models/gemini-2.5-flash-lite',
             generationConfig: {
                 temperature: 0.2, // Lower temperature for more focused output
                 topP: 0.8,
